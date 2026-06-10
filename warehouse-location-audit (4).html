@@ -1,0 +1,2728 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wimas — Location Denetim Sistemi</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #161920;
+    --surface2: #1e2230;
+    --border: #2a2f3d;
+    --border2: #353b4d;
+    --accent: #4f8ef7;
+    --accent2: #7b5ea7;
+    --green: #3ecf8e;
+    --yellow: #f5c842;
+    --red: #f56565;
+    --orange: #f59542;
+    --text: #e8eaf0;
+    --text2: #8b92a5;
+    --text3: #555d72;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 13px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-weight: 700; font-size: 15px; letter-spacing: .5px; color: var(--text); }
+  .logo span { color: var(--accent); }
+  .header-meta { color: var(--text3); font-size: 11px; font-family: var(--mono); }
+
+  /* ── TABS ── */
+  nav {
+    display: flex;
+    gap: 2px;
+    padding: 12px 28px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .tab {
+    padding: 8px 18px;
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    border-bottom: none;
+    transition: .15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab.active {
+    color: var(--accent);
+    background: var(--bg);
+    border-color: var(--border);
+    border-bottom-color: var(--bg);
+  }
+  .tab-badge {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .tab-badge.warn { background: var(--orange); }
+  .tab-badge.ok { background: var(--green); }
+
+  /* ── MAIN ── */
+  main { padding: 24px 28px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── UPLOAD ZONE ── */
+  .upload-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .upload-card {
+    border: 1.5px dashed var(--border2);
+    border-radius: 10px;
+    padding: 18px;
+    cursor: pointer;
+    transition: .15s;
+    background: var(--surface);
+    position: relative;
+  }
+  .upload-card:hover { border-color: var(--accent); background: var(--surface2); }
+  .upload-card.loaded { border-style: solid; border-color: var(--green); }
+  .upload-card input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-card .uc-icon { font-size: 22px; margin-bottom: 8px; }
+  .upload-card .uc-title { font-weight: 600; font-size: 12px; color: var(--text); margin-bottom: 3px; }
+  .upload-card .uc-sub { font-size: 11px; color: var(--text3); }
+  .upload-card .uc-status { margin-top: 8px; font-size: 11px; font-family: var(--mono); color: var(--green); }
+
+  /* ── STAT CARDS ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+  .stat-val { font-size: 24px; font-weight: 700; font-family: var(--mono); }
+  .stat-val.blue { color: var(--accent); }
+  .stat-val.green { color: var(--green); }
+  .stat-val.yellow { color: var(--yellow); }
+  .stat-val.red { color: var(--red); }
+  .stat-val.purple { color: var(--accent2); }
+
+  /* ── SEARCH / FILTER BAR ── */
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .search-wrap { position: relative; flex: 1; min-width: 180px; }
+  .search-wrap input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 8px 10px 8px 32px;
+    color: var(--text);
+    font-size: 12px;
+    outline: none;
+    font-family: var(--sans);
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap .si { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px; }
+  select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 8px 10px;
+    color: var(--text2);
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+    font-family: var(--sans);
+  }
+  select:focus { border-color: var(--accent); }
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn.sec { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+  .btn.sec:hover { color: var(--text); }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--text3);
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  thead th:hover { color: var(--text2); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td { padding: 9px 14px; font-size: 12px; }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 10px; font-weight: 600; font-family: var(--mono);
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .badge.dinamik { background: rgba(79,142,247,.15); color: var(--accent); border: 1px solid rgba(79,142,247,.3); }
+  .badge.statik   { background: rgba(123,94,167,.15); color: var(--accent2); border: 1px solid rgba(123,94,167,.3); }
+  .badge.zasket   { background: rgba(245,200,66,.12); color: var(--yellow); border: 1px solid rgba(245,200,66,.3); }
+  .badge.ok       { background: rgba(62,207,142,.12); color: var(--green);  border: 1px solid rgba(62,207,142,.3); }
+  .badge.warn     { background: rgba(245,149,66,.12); color: var(--orange); border: 1px solid rgba(245,149,66,.3); }
+  .badge.danger   { background: rgba(245,101,101,.12); color: var(--red);   border: 1px solid rgba(245,101,101,.3); }
+  .badge.empty    { background: rgba(85,93,114,.15); color: var(--text3);   border: 1px solid rgba(85,93,114,.3); }
+  .badge.cat-pad   { background: rgba(245,101,101,.12); color: #f88; border: 1px solid rgba(245,101,101,.3); }
+  .badge.cat-rotor { background: rgba(245,149,66,.12);  color: var(--orange); border: 1px solid rgba(245,149,66,.3); }
+  .badge.cat-susp  { background: rgba(79,142,247,.12);  color: #7ab4ff; border: 1px solid rgba(79,142,247,.3); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text3);
+  }
+  .empty-state .es-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 13px; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── MONO TEXT ── */
+  .mono { font-family: var(--mono); }
+
+  /* ── CONTAINER ANALYSIS SPECIFIC ── */
+  .cont-match { color: var(--green); font-weight: 600; }
+  .cont-nomatch { color: var(--text3); }
+
+  /* ── PAGINATION ── */
+  .pagination {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .pagination button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text2);
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: var(--sans);
+  }
+  .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .pagination button:disabled { opacity: .35; cursor: default; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 20px; right: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: var(--text);
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: .25s;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── DETAIL PANEL ── */
+  .detail-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .detail-overlay.open { display: flex; }
+  .detail-panel {
+    width: 380px;
+    height: 100%;
+    background: var(--surface);
+    border-left: 1px solid var(--border2);
+    padding: 24px;
+    overflow-y: auto;
+  }
+  .dp-close {
+    float: right;
+    cursor: pointer;
+    color: var(--text3);
+    font-size: 18px;
+    line-height: 1;
+  }
+  .dp-close:hover { color: var(--text); }
+  .dp-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+  .dp-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .dp-row:last-child { border-bottom: none; }
+  .dp-key { color: var(--text3); }
+  .dp-val { color: var(--text); font-family: var(--mono); text-align: right; }
+
+  /* ── SNAP MODE TOGGLE ── */
+  .snap-mode-btn {
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    padding: 8px 18px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-align: left;
+    transition: .15s;
+    line-height: 1.4;
+  }
+  .snap-mode-btn:hover { background: var(--surface2); color: var(--text); }
+  .snap-mode-btn.active { background: var(--surface2); color: var(--accent); border: 1px solid var(--border2); }
+
+  /* ── CATEGORY FILTER BAR ── */
+  .cat-filter-bar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .cat-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: .15s;
+    white-space: nowrap;
+  }
+  .cat-btn:hover { border-color: var(--accent); color: var(--text); }
+  .cat-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+  /* ── SCANNER ── */
+  .scanner-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .scanner-bar.active { border-color: var(--green); background: rgba(62,207,142,.06); }
+  .scanner-bar.error  { border-color: var(--red);   background: rgba(245,101,101,.06); }
+  .scan-input {
+    flex: 1; min-width: 180px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 9px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    outline: none;
+  }
+  .scan-input:focus { border-color: var(--accent); }
+  .scan-label { font-size: 11px; color: var(--text3); white-space: nowrap; }
+  .scan-result {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: none;
+  }
+  .scan-result.show { display: block; }
+  .scan-result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .scan-field { display: flex; flex-direction: column; gap: 4px; }
+  .scan-field label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; }
+  .scan-field input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    outline: none;
+  }
+  .scan-field input:focus { border-color: var(--accent); }
+  .scan-field input.highlight { border-color: var(--yellow); background: rgba(245,200,66,.06); }
+  .scan-info { font-size: 12px; color: var(--text2); margin-bottom: 10px; }
+  .scan-info span { color: var(--text); font-weight: 600; font-family: var(--mono); }
+  .move-log {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .move-log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: .8px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    header, nav, main { padding-left: 14px; padding-right: 14px; }
+    .upload-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2,1fr); }
+  }
+
+  /* ── LOGIN ── */
+  #login-overlay {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 40px 44px;
+    width: 340px;
+    text-align: center;
+  }
+  .login-logo { font-size: 28px; font-weight: 800; margin-bottom: 4px; letter-spacing: .5px; }
+  .login-logo span { color: var(--accent); }
+  .login-sub { font-size: 12px; color: var(--text3); margin-bottom: 28px; }
+  .login-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; text-align: left; }
+  .login-field label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; }
+  .login-field input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--sans);
+    outline: none;
+  }
+  .login-field input:focus { border-color: var(--accent); }
+  .login-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 11px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--sans);
+    margin-top: 6px;
+    transition: .15s;
+  }
+  .login-btn:hover { opacity: .85; }
+  .login-error { color: var(--red); font-size: 11px; margin-top: 10px; min-height: 16px; }
+
+</style>
+</head>
+<body>
+
+
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">WIMAS <span>Depo</span></div>
+    <div class="login-sub">Location Denetim Sistemi</div>
+    <div class="login-field">
+      <label>Kullanıcı Adı</label>
+      <input type="text" id="login-user" placeholder="wimas" autocomplete="username"
+        onkeydown="if(event.key==='Enter') document.getElementById('login-pass').focus()">
+    </div>
+    <div class="login-field">
+      <label>Şifre</label>
+      <input type="password" id="login-pass" placeholder="••••••"
+        onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Giriş Yap</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">WIMAS <span>Depo</span> — Location Denetim</div>
+  <div class="header-meta" id="headerDate"></div>
+</header>
+
+<nav>
+  <div class="tab active" onclick="switchTab('locations')" id="tab-locations">📦 Locationlar <span class="tab-badge ok" id="badge-loc">0</span></div>
+  <div class="tab" onclick="switchTab('products')" id="tab-products">🏷️ Ürün Atamaları <span class="tab-badge" id="badge-prod">0</span></div>
+  <div class="tab" onclick="switchTab('container')" id="tab-container">🚢 Konteyner Analizi <span class="tab-badge warn" id="badge-cont">0</span></div>
+  <div class="tab" onclick="switchTab('snapshot')" id="tab-snapshot">📊 Snapshot Karşılaştırma <span class="tab-badge" id="badge-snap" style="background:var(--accent2)">0</span></div>
+  <div class="tab" onclick="switchTab('forklift')" id="tab-forklift">🚜 Rafa Kaldırma Öncelikleri <span class="tab-badge warn" id="badge-fork">0</span></div>
+</nav>
+
+<main>
+
+  <!-- ═══════════════ PAGE 1: LOCATIONLAR ═══════════════ -->
+  <div class="page active" id="page-locations">
+    <div class="upload-grid">
+      <div class="upload-card" id="uc-locations">
+        <input type="file" accept=".csv,.xlsx,.xls" onchange="handleUpload(event,'locations')">
+        <div class="uc-icon">📋</div>
+        <div class="uc-title">Location Listesi</div>
+        <div class="uc-sub">METRIX NO · LOCATION · DEPO QTY</div>
+        <div class="uc-status" id="st-locations">CSV veya Excel yükle</div>
+      </div>
+    </div>
+
+    <div class="stats-row" id="loc-stats" style="display:none">
+      <div class="stat-card"><div class="stat-label">Toplam Location</div><div class="stat-val blue" id="s-total">0</div></div>
+      <div class="stat-card"><div class="stat-label">Dinamik (A–Z)</div><div class="stat-val" style="color:var(--accent)" id="s-dinamik">0</div></div>
+      <div class="stat-card"><div class="stat-label">Zasket</div><div class="stat-val yellow" id="s-zasket">0</div></div>
+      <div class="stat-card"><div class="stat-label">Statik (ZB+)</div><div class="stat-val purple" id="s-statik">0</div></div>
+      <div class="stat-card"><div class="stat-label">Stok Yok (0)</div><div class="stat-val red" id="s-empty">0</div></div>
+      <div class="stat-card"><div class="stat-label">Düşük Stok</div><div class="stat-val yellow" id="s-low">0</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="si">🔍</span>
+        <input type="text" id="loc-search" placeholder="Location veya Metrix No ara..." oninput="filterLocations()">
+      </div>
+      <select id="loc-type" onchange="filterLocations()">
+        <option value="">Tüm Tipler</option>
+        <option value="dinamik">📦 Dinamik (A–Z)</option>
+        <option value="zasket">📦 Zasket</option>
+        <option value="statik">📦 Statik (ZB+)</option>
+        <option disabled>──────────────</option>
+        <option value="cat-brake-pad">🔴 Brake Pads (MS/MC)</option>
+        <option value="cat-brake-rotor">🟠 Brake Rotors (MF)</option>
+        <option value="cat-suspension">🔵 Suspension (MT)</option>
+      </select>
+      <select id="loc-stock" onchange="filterLocations()">
+        <option value="">Bu Location — Tüm</option>
+        <option value="empty">Bu Location — Boş (0)</option>
+        <option value="low">Bu Location — Düşük (&lt;5)</option>
+        <option value="ok">Bu Location — Normal (≥5)</option>
+      </select>
+      <select id="loc-total-stock" onchange="filterLocations()">
+        <option value="">Toplam Depo — Tüm</option>
+        <option value="t-empty">Toplam Depo — Boş (0)</option>
+        <option value="t-low">Toplam Depo — Düşük (&lt;10)</option>
+        <option value="t-ok">Toplam Depo — Normal (≥10)</option>
+      </select>
+      <button class="btn sec" onclick="exportCSV('locations')">⬇ CSV</button>
+    </div>
+
+    <div class="section-title">Location Listesi</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortTable('locations','metrix')">Metrix No ↕</th>
+            <th onclick="sortTable('locations','location')">Location ↕</th>
+            <th onclick="sortTable('locations','type')">Tip ↕</th>
+            <th>Kategori</th>
+            <th onclick="sortTable('locations','qty')">Bu Location QTY ↕</th>
+            <th onclick="sortTable('locations','totalQty')">Toplam Stok ↕</th>
+            <th>Stok Durumu</th>
+            <th>Ürün Ataması</th>
+          </tr>
+        </thead>
+        <tbody id="loc-tbody"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span id="loc-page-info"></span>
+      <button onclick="locPage(-1)" id="loc-prev">‹ Önceki</button>
+      <button onclick="locPage(1)" id="loc-next">Sonraki ›</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PAGE 2: ÜRÜN ATAMASI ═══════════════ -->
+  <div class="page" id="page-products">
+    <div class="upload-grid">
+      <div class="upload-card" id="uc-assignments">
+        <input type="file" accept=".csv,.xlsx,.xls" onchange="handleUpload(event,'assignments')">
+        <div class="uc-icon">🏷️</div>
+        <div class="uc-title">Ürün–Location Ataması</div>
+        <div class="uc-sub">SKU · LOCATION</div>
+        <div class="uc-status" id="st-assignments">CSV veya Excel yükle</div>
+      </div>
+    </div>
+
+    <div class="stats-row" id="prod-stats" style="display:none">
+      <div class="stat-card"><div class="stat-label">Toplam Atama</div><div class="stat-val blue" id="sp-total">0</div></div>
+      <div class="stat-card"><div class="stat-label">Stok Eşleşen</div><div class="stat-val green" id="sp-matched">0</div></div>
+      <div class="stat-card"><div class="stat-label">Location Yok</div><div class="stat-val red" id="sp-nomatch">0</div></div>
+      <div class="stat-card"><div class="stat-label">Dinamik'te</div><div class="stat-val" style="color:var(--accent)" id="sp-dyn">0</div></div>
+      <div class="stat-card"><div class="stat-label">Statik'te</div><div class="stat-val purple" id="sp-stat">0</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="si">🔍</span>
+        <input type="text" id="prod-search" placeholder="SKU veya Location ara..." oninput="filterProducts()">
+      </div>
+      <select id="prod-filter" onchange="filterProducts()">
+        <option value="">Tüm Atamalar</option>
+        <option value="matched">Stok Eşleşen</option>
+        <option value="nomatch">Location Bulunamayan</option>
+        <option value="dinamik">Dinamik Location</option>
+        <option value="statik">Statik Location</option>
+        <option value="zasket">Zasket Location</option>
+      </select>
+      <button class="btn sec" onclick="exportCSV('products')">⬇ CSV</button>
+    </div>
+
+    <div class="section-title">Ürün–Location Eşleşme Tablosu</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortTable('products','sku')">SKU ↕</th>
+            <th onclick="sortTable('products','location')">Atanan Location ↕</th>
+            <th>Location Tipi</th>
+            <th onclick="sortTable('products','qty')">Mevcut Stok ↕</th>
+            <th>Stok Durumu</th>
+          </tr>
+        </thead>
+        <tbody id="prod-tbody"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span id="prod-page-info"></span>
+      <button onclick="prodPage(-1)" id="prod-prev">‹ Önceki</button>
+      <button onclick="prodPage(1)" id="prod-next">Sonraki ›</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PAGE 3: KONTEYNER ANALİZİ ═══════════════ -->
+  <div class="page" id="page-container">
+    <div class="upload-grid">
+      <div class="upload-card" id="uc-container">
+        <input type="file" accept=".csv,.xlsx,.xls" onchange="handleUpload(event,'container')">
+        <div class="uc-icon">🚢</div>
+        <div class="uc-title">Konteyner Listesi</div>
+        <div class="uc-sub">CUSTOMER REF · PALLET NO · QTY</div>
+        <div class="uc-status" id="st-container">CSV veya Excel yükle</div>
+      </div>
+    </div>
+
+    <div class="stats-row" id="cont-stats" style="display:none">
+      <div class="stat-card"><div class="stat-label">Konteyner SKU</div><div class="stat-val blue" id="sc-total">0</div></div>
+      <div class="stat-card"><div class="stat-label">Location Atanmış</div><div class="stat-val green" id="sc-has-loc">0</div></div>
+      <div class="stat-card"><div class="stat-label">Location Yok</div><div class="stat-val red" id="sc-no-loc">0</div></div>
+      <div class="stat-card"><div class="stat-label">Dinamik'te Var</div><div class="stat-val" style="color:var(--accent)" id="sc-in-dyn">0</div></div>
+      <div class="stat-card"><div class="stat-label">Düşük Stoklu</div><div class="stat-val yellow" id="sc-low">0</div></div>
+      <div class="stat-card"><div class="stat-label">Toplam Gelen</div><div class="stat-val purple" id="sc-qty">0</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="si">🔍</span>
+        <input type="text" id="cont-search" placeholder="Metrix No veya Pallet ara..." oninput="filterContainer()">
+      </div>
+      <select id="cont-filter" onchange="filterContainer()">
+        <option value="">Tümü</option>
+        <option value="has-loc">Location Atanmış</option>
+        <option value="no-loc">Location Yok — Yerleştir!</option>
+        <option value="in-dyn">Dinamik'te Mevcut</option>
+        <option value="low-stock">Düşük Stoklu</option>
+      </select>
+      <button class="btn sec" onclick="exportCSV('container')">⬇ CSV</button>
+    </div>
+
+    <div class="section-title">Konteyner → Location Eşleşme Analizi</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Customer Ref (Metrix)</th>
+            <th>Pallet No</th>
+            <th onclick="sortTable('container','qty')">Gelen QTY ↕</th>
+            <th>Atanan Location</th>
+            <th>Location Tipi</th>
+            <th onclick="sortTable('container','stock')">Mevcut Stok ↕</th>
+            <th>Aksiyon</th>
+          </tr>
+        </thead>
+        <tbody id="cont-tbody"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span id="cont-page-info"></span>
+      <button onclick="contPage(-1)" id="cont-prev">‹ Önceki</button>
+      <button onclick="contPage(1)" id="cont-next">Sonraki ›</button>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════ PAGE 4: SNAPSHOT KARŞILAŞTIRMA ═══════════════ -->
+  <div class="page" id="page-snapshot">
+
+    <div class="upload-grid" style="grid-template-columns:1fr 1fr">
+      <div class="upload-card" id="uc-snap-start">
+        <input type="file" accept=".csv,.xlsx,.xls" onchange="handleUpload(event,'snap-start')">
+        <div class="uc-icon">🟢</div>
+        <div class="uc-title">Başlangıç Snapshot</div>
+        <div class="uc-sub">Pazartesi sabahı — METRIX NO · LOCATION · QTY</div>
+        <div class="uc-status" id="st-snap-start">CSV veya Excel yükle</div>
+      </div>
+      <div class="upload-card" id="uc-snap-end">
+        <input type="file" accept=".csv,.xlsx,.xls" onchange="handleUpload(event,'snap-end')">
+        <div class="uc-icon">🔴</div>
+        <div class="uc-title">Bitiş Snapshot</div>
+        <div class="uc-sub">Cuma akşamı — METRIX NO · LOCATION · QTY</div>
+        <div class="uc-status" id="st-snap-end">CSV veya Excel yükle</div>
+      </div>
+    </div>
+
+    <!-- MODE TOGGLE -->
+    <div id="snap-mode-bar" style="display:none;margin-bottom:20px">
+      <div style="display:flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;width:fit-content">
+        <button class="snap-mode-btn active" id="smb-location" onclick="setSnapMode('location')">
+          📍 Location Takibi
+          <span style="font-size:10px;color:var(--text3);display:block;font-weight:400">Her raf ayrı ayrı</span>
+        </button>
+        <button class="snap-mode-btn" id="smb-depot" onclick="setSnapMode('depot')">
+          🏭 Genel Depo
+          <span style="font-size:10px;color:var(--text3);display:block;font-weight:400">SKU bazlı toplam</span>
+        </button>
+      </div>
+      <span id="snap-mode-desc" style="margin-left:14px;font-size:11px;color:var(--text3)">Her location satır satır gösteriliyor</span>
+    </div>
+
+    <!-- DASHBOARD STATS -->
+    <div id="snap-dashboard" style="display:none">
+
+      <div class="stats-row" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+        <div class="stat-card"><div class="stat-label">Toplam SKU</div><div class="stat-val blue" id="sn-total">0</div></div>
+        <div class="stat-card"><div class="stat-label">Azalan SKU</div><div class="stat-val red" id="sn-decreased">0</div></div>
+        <div class="stat-card"><div class="stat-label">Sıfıra Düşen</div><div class="stat-val" style="color:#ff4d4d" id="sn-zeroed">0</div></div>
+        <div class="stat-card"><div class="stat-label">Artan SKU</div><div class="stat-val green" id="sn-increased">0</div></div>
+        <div class="stat-card"><div class="stat-label">Değişmeyen</div><div class="stat-val" style="color:var(--text3)" id="sn-same">0</div></div>
+        <div class="stat-card"><div class="stat-label">Toplam Satılan</div><div class="stat-val yellow" id="sn-sold">0</div></div>
+      </div>
+
+      <!-- TOP MOVERS GRID -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+
+        <!-- En çok azalan SKU'lar -->
+        <div>
+          <div class="section-title">🏆 En Çok Azalan SKU'lar (Satış Sıralaması)</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Metrix No</th>
+                <th>Kategori</th>
+                <th>Başlangıç</th>
+                <th>Bitiş</th>
+                <th>Azalma ↓</th>
+                <th>% Satıldı</th>
+              </tr></thead>
+              <tbody id="snap-top-sku"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- En çok azalan locationlar -->
+        <div id="snap-top-loc-section">
+          <div class="section-title">📍 En Çok Azalan Locationlar</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Location</th>
+                <th>Tip</th>
+                <th>Başlangıç</th>
+                <th>Bitiş</th>
+                <th>Azalma ↓</th>
+              </tr></thead>
+              <tbody id="snap-top-loc"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sıfıra düşenler -->
+      <div style="margin-bottom:20px">
+        <div class="section-title">⚠️ Sıfıra Düşenler — Acil Restock</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Metrix No</th>
+              <th>Kategori</th>
+              <th>Location</th>
+              <th>Başlangıç QTY</th>
+              <th>Bitiş QTY</th>
+              <th>Durum</th>
+            </tr></thead>
+            <tbody id="snap-zeroed"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Full comparison table -->
+      <div class="section-title">📋 Tüm SKU Karşılaştırması</div>
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="si">🔍</span>
+          <input type="text" id="snap-search" placeholder="Metrix No veya Location ara..." oninput="filterSnapshot()">
+        </div>
+        <select id="snap-filter" onchange="filterSnapshot()">
+          <option value="">Tümü</option>
+          <option value="decreased">Azalanlar</option>
+          <option value="zeroed">Sıfıra Düşenler</option>
+          <option value="increased">Artanlar</option>
+          <option value="same">Değişmeyenler</option>
+          <option value="cat-brake-pad">🔴 Brake Pads</option>
+          <option value="cat-brake-rotor">🟠 Brake Rotors</option>
+          <option value="cat-suspension">🔵 Suspension</option>
+        </select>
+        <button class="btn sec" onclick="exportCSV('snapshot')">⬇ CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead id="snap-full-thead"><tr>
+            <th onclick="sortSnap('metrix')">Metrix No ↕</th>
+            <th>Kategori</th>
+            <th onclick="sortSnap('location')" id="snap-th-loc">Location ↕</th>
+            <th id="snap-th-type">Tip</th>
+            <th onclick="sortSnap('start')">Başlangıç ↕</th>
+            <th onclick="sortSnap('end')">Bitiş ↕</th>
+            <th onclick="sortSnap('diff')">Fark ↕</th>
+            <th>Değişim %</th>
+            <th>Durum</th>
+          </tr></thead>
+          <tbody id="snap-tbody"></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span id="snap-page-info"></span>
+        <button onclick="snapPage(-1)" id="snap-prev">‹ Önceki</button>
+        <button onclick="snapPage(1)" id="snap-next">Sonraki ›</button>
+      </div>
+
+    </div><!-- /snap-dashboard -->
+  </div>
+
+
+  <!-- ═══════════════ PAGE 5: RAFA KALDIRMA ═══════════════ -->
+  <div class="page" id="page-forklift">
+
+    <div class="upload-grid">
+      <div class="upload-card" id="uc-fork-loc">
+        <input type="file" accept=".csv,.xlsx,.xls" onchange="handleUpload(event,'fork-loc')">
+        <div class="uc-icon">📋</div>
+        <div class="uc-title">Location Listesi</div>
+        <div class="uc-sub">METRIX NO · LOCATION · DEPO QTY</div>
+        <div class="uc-status" id="st-fork-loc">CSV veya Excel yükle</div>
+      </div>
+      <div class="upload-card" id="uc-fork-sales">
+        <input type="file" accept=".csv,.xlsx,.xls" onchange="handleUpload(event,'fork-sales')">
+        <div class="uc-icon">📈</div>
+        <div class="uc-title">Son 3 Aylık Satış Verisi</div>
+        <div class="uc-sub">METRIX NO (SKU) · SATIŞ ADEDİ</div>
+        <div class="uc-status" id="st-fork-sales">CSV veya Excel yükle</div>
+      </div>
+    </div>
+
+    <div id="fork-dashboard" style="display:none">
+
+      <!-- STAT CARDS -->
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Toplam Statik SKU</div><div class="stat-val blue" id="fk-total">0</div></div>
+        <div class="stat-card" style="border-color:rgba(245,101,101,.4)"><div class="stat-label">🔴 Hemen Kaldır</div><div class="stat-val red" id="fk-p1">0</div></div>
+        <div class="stat-card" style="border-color:rgba(245,200,66,.4)"><div class="stat-label">🟡 Önce Taşı</div><div class="stat-val yellow" id="fk-p2">0</div></div>
+        <div class="stat-card" style="border-color:rgba(79,142,247,.4)"><div class="stat-label">🔵 Dinamikte Zaten Var</div><div class="stat-val blue" id="fk-p3">0</div></div>
+        <div class="stat-card"><div class="stat-label">⚠️ Karışık Loc</div><div class="stat-val green" id="fk-p4">0</div></div>
+      </div>
+
+      <!-- MANUAL ENTRY -->
+      <div class="section-title">✏️ İşlem Girişi — Taşıma / Kaldırma</div>
+
+      <div class="scanner-bar" id="scanner-bar">
+        <span class="scan-label">📦 SKU:</span>
+        <input class="scan-input" id="scan-sku-input" placeholder="Metrix No gir..." autocomplete="off"
+          oninput="lookupSKU(this.value)" style="text-transform:uppercase">
+        <span class="scan-label" style="margin-left:8px">📍 Hedef Location:</span>
+        <input class="scan-input" id="scan-loc-input" placeholder="Hedef location..." autocomplete="off"
+          onkeydown="if(event.key==='Enter') document.getElementById('scan-qty-input').focus()">
+        <span class="scan-label" style="margin-left:8px">Adet:</span>
+        <input class="scan-input" id="scan-qty-input" type="number" placeholder="Tümü"
+          style="width:90px;min-width:90px"
+          onkeydown="if(event.key==='Enter') confirmScanMove()">
+        <button class="btn" onclick="confirmScanMove()" style="white-space:nowrap;background:var(--green)">✓ Taşı</button>
+        <button class="btn" onclick="markAsRemoved()" style="white-space:nowrap;background:var(--red)">🗑 Kaldır</button>
+        <button class="btn sec" onclick="clearScan()">✕</button>
+      </div>
+
+      <!-- Entry result preview -->
+      <div class="scan-result" id="scan-result">
+        <div class="scan-info" id="scan-info-text"></div>
+        <div class="scan-result-grid">
+          <div class="scan-field">
+            <label>SKU</label>
+            <input id="sr-sku" readonly>
+          </div>
+          <div class="scan-field">
+            <label>Öncelik</label>
+            <input id="sr-priority" readonly>
+          </div>
+        </div>
+
+        <!-- Location rows -->
+        <div id="sr-loc-rows" style="margin-top:12px"></div>
+      </div>
+
+      <!-- Move log -->
+      <div class="move-log" id="move-log" style="display:none">
+        <div class="move-log-header">
+          <span>📋 Yapılan İşlemler (<span id="move-log-count">0</span>)</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn sec" onclick="undoLastMove()" style="padding:4px 10px;font-size:11px">↩ Geri Al</button>
+            <button class="btn" onclick="exportCSV('forklift-moves')" style="padding:4px 10px;font-size:11px">⬇ Export</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr>
+            <th>SKU</th><th>Kaynak Location</th><th>Hedef Location</th><th>Adet</th><th>İşlem</th><th>Zaman</th>
+          </tr></thead>
+          <tbody id="move-log-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- UNIFIED TABLE -->
+      <div class="section-title">📋 Tüm Statik Locationlar — Aksiyon Listesi</div>
+
+      <!-- Filter Row 1: Kategori -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--text3);white-space:nowrap">Kategori:</span>
+        <div class="cat-filter-bar" style="margin-bottom:0" id="cf-unified-cat">
+          <button class="cat-btn active" onclick="setUnifiedFilter('cat','')">Tümü</button>
+          <button class="cat-btn" onclick="setUnifiedFilter('cat','brake-pad')">🔴 Brake Pad</button>
+          <button class="cat-btn" onclick="setUnifiedFilter('cat','brake-rotor')">🟠 Brake Rotor</button>
+          <button class="cat-btn" onclick="setUnifiedFilter('cat','suspension')">🔵 Suspension</button>
+          <button class="cat-btn" onclick="setUnifiedFilter('cat','other')">Diğer</button>
+        </div>
+      </div>
+
+      <!-- Filter Row 2: Aksiyon -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--text3);white-space:nowrap">Aksiyon:</span>
+        <div class="cat-filter-bar" style="margin-bottom:0" id="cf-unified-action">
+          <button class="cat-btn active" id="ab-all"    onclick="toggleActionFilter('all')">Tümü</button>
+          <button class="cat-btn"        id="ab-remove" onclick="toggleActionFilter('remove')" style="border-color:rgba(245,101,101,.4);color:var(--red)">🔴 Kaldır</button>
+          <button class="cat-btn"        id="ab-move"   onclick="toggleActionFilter('move')"   style="border-color:rgba(245,200,66,.4);color:var(--yellow)">🟡 Dinamiğe Taşı</button>
+          <button class="cat-btn"        id="ab-merge"  onclick="toggleActionFilter('merge')"  style="border-color:rgba(79,142,247,.4);color:var(--accent)">🔵 Dinamikte Zaten Var</button>
+        </div>
+      </div>
+
+      <!-- Filter Row 3: Location tipi -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--text3);white-space:nowrap">Location:</span>
+        <div class="cat-filter-bar" style="margin-bottom:0" id="cf-unified-loc">
+          <button class="cat-btn active" onclick="setUnifiedFilter('loc','')">Tümü</button>
+          <button class="cat-btn" onclick="setUnifiedFilter('loc','single')" style="border-color:rgba(62,207,142,.4);color:var(--green)">📍 Tek Locationlu</button>
+          <button class="cat-btn" onclick="setUnifiedFilter('loc','multi')" style="border-color:rgba(123,94,167,.4);color:var(--accent2)">📦 Çok Locationlu (2+)</button>
+        </div>
+      </div>
+
+      <div class="toolbar" style="margin-bottom:10px">
+        <div class="search-wrap">
+          <span class="si">🔍</span>
+          <input type="text" id="fork-search" placeholder="Metrix No veya Location ara..." oninput="renderUnifiedTable()">
+        </div>
+        <span id="unified-count" style="font-size:11px;color:var(--text3);white-space:nowrap"></span>
+        <button class="btn sec" onclick="exportCSV('forklift')">⬇ CSV (Tümü)</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Metrix No</th>
+            <th>Kategori</th>
+            <th>Statik Location(lar)</th>
+            <th>Statik Stok</th>
+            <th>Dinamik Location(lar)</th>
+            <th>Dinamik Stok</th>
+            <th>3 Ay Satış</th>
+            <th>Aksiyon</th>
+          </tr></thead>
+          <tbody id="fork-unified-tbody"></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span id="fork-page-info"></span>
+        <button onclick="forkPage(-1)" id="fork-prev">‹ Önceki</button>
+        <button onclick="forkPage(1)" id="fork-next">Sonraki ›</button>
+      </div>
+
+      <!-- hidden tbodies for compat -->
+      <tbody id="fork-p1-tbody" style="display:none"></tbody>
+      <tbody id="fork-p2-tbody" style="display:none"></tbody>
+      <tbody id="fork-p3-tbody" style="display:none"></tbody>
+      <tbody id="fork-p4-tbody" style="display:none"></tbody>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- Detail Panel -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detailPanel">
+    <span class="dp-close" onclick="closeDetailPanel()">✕</span>
+    <div class="dp-title" id="dp-title">—</div>
+    <div id="dp-content"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+const state = {
+  locations: [],    // {metrix, location, type, qty}
+  assignments: [],  // {sku, location}
+  container: [],    // {metrix, pallet, qty}
+  sortDir: {}
+};
+
+let locCurrentPage = 1, prodCurrentPage = 1, contCurrentPage = 1;
+const PAGE_SIZE = 50;
+
+// ══════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════
+function locationType(loc) {
+  if (!loc) return 'unknown';
+  const u = loc.toString().trim().toUpperCase();
+  if (u.startsWith('ZASKET')) return 'zasket';
+  if (u.startsWith('ZB') || (u.startsWith('Z') && !u.startsWith('ZA') && !u.startsWith('ZASKET'))) {
+    // ZB, ZC, ZD... = statik
+    if (/^Z[B-Z]/i.test(u)) return 'statik';
+  }
+  // Single letter A-Z prefix = dinamik
+  if (/^[A-Z]\d*/i.test(u)) return 'dinamik';
+  return 'statik';
+}
+
+function productCategory(metrix) {
+  if (!metrix) return '';
+  const u = metrix.toString().trim().toUpperCase();
+  if (u.endsWith('MS') || u.endsWith('MC')) return 'brake-pad';
+  if (u.endsWith('MF')) return 'brake-rotor';
+  if (u.endsWith('MT') || u.endsWith('MG') || u.endsWith('MP')) return 'suspension';
+  return 'other';
+}
+
+function categoryBadge(metrix) {
+  const cat = productCategory(metrix);
+  const map = {
+    'brake-pad':    ['🔴 Brake Pad',    'cat-pad'],
+    'brake-rotor':  ['🟠 Brake Rotor',  'cat-rotor'],
+    'suspension':   ['🔵 Suspension',   'cat-susp'],
+    'other':        ['',                ''],
+  };
+  const [label, cls] = map[cat] || ['', ''];
+  return label ? `<span class="badge ${cls}">${label}</span>` : `<span class="badge empty">—</span>`;
+}
+
+function stockStatus(qty) {
+  const q = parseInt(qty) || 0;
+  if (q === 0) return 'empty';
+  if (q < 5)  return 'low';
+  return 'ok';
+}
+
+function stockBadge(qty) {
+  const s = stockStatus(qty);
+  const labels = { empty: '0 — Boş', low: `${qty} — Düşük`, ok: `${qty} — Normal` };
+  const cls =    { empty: 'danger', low: 'warn', ok: 'ok' };
+  return `<span class="badge ${cls[s]}">${labels[s]}</span>`;
+}
+
+function typeBadge(type) {
+  const map = { dinamik: 'Dinamik', zasket: 'Zasket', statik: 'Statik', unknown: '?' };
+  return `<span class="badge ${type}">${map[type] || type}</span>`;
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('page-' + name).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════
+//  CSV / EXCEL PARSER
+// ══════════════════════════════════════════════════
+function handleUpload(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'csv') {
+    const reader = new FileReader();
+    reader.onload = e => parseCSV(e.target.result, type, file.name);
+    reader.readAsText(file);
+  } else {
+    // xlsx/xls — use SheetJS via CDN
+    if (typeof XLSX === 'undefined') {
+      loadSheetJS(() => readExcel(file, type));
+    } else {
+      readExcel(file, type);
+    }
+  }
+}
+
+function loadSheetJS(cb) {
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload = cb;
+  document.head.appendChild(s);
+}
+
+function readExcel(file, type) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_csv(ws);
+    parseCSV(rows, type, file.name);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseCSV(text, type, filename) {
+  const lines = text.trim().split('\n').filter(l => l.trim());
+  if (lines.length < 2) { toast('Dosya boş veya hatalı!'); return; }
+
+  // Auto-detect delimiter
+  const delim = lines[0].includes('\t') ? '\t' : ',';
+  const headers = lines[0].split(delim).map(h => h.trim().replace(/"/g,'').toUpperCase());
+
+  const rows = lines.slice(1).map(l => {
+    const vals = l.split(delim).map(v => v.trim().replace(/"/g,''));
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = vals[i] || '');
+    return obj;
+  });
+
+  if (type === 'locations')   processLocations(rows, filename);
+  if (type === 'assignments') processAssignments(rows, filename);
+  if (type === 'container')   processContainer(rows, filename);
+  if (type === 'snap-start' || type === 'snap-end') processSnapFile(rows, type);
+  if (type === 'fork-loc' || type === 'fork-sales') processForkFile(rows, type);
+}
+
+// ══════════════════════════════════════════════════
+//  DATA PROCESSORS
+// ══════════════════════════════════════════════════
+function processLocations(rows, filename) {
+  // Flexible column matching
+  const findCol = (row, opts) => {
+    for (const k of Object.keys(row)) {
+      for (const o of opts) {
+        if (k.includes(o)) return row[k];
+      }
+    }
+    return '';
+  };
+
+  state.locations = rows.map(r => {
+    const metrix   = findCol(r, ['METRIX','CUST','REF','SKU','NO']);
+    const location = findCol(r, ['LOCATION','LOC','BIN','ALAN']);
+    const qty      = parseInt(findCol(r, ['QTY','QUANTITY','MIKTAR','STOK','DEPO'])) || 0;
+    return { metrix, location, type: locationType(location), qty };
+  }).filter(r => r.location);
+
+  document.getElementById('st-locations').textContent = `✓ ${state.locations.length} satır yüklendi`;
+  document.getElementById('uc-locations').classList.add('loaded');
+  updateLocStats();
+  renderLocations();
+  toast(`${state.locations.length} location yüklendi`);
+}
+
+function processAssignments(rows, filename) {
+  const findCol = (row, opts) => {
+    for (const k of Object.keys(row)) for (const o of opts) if (k.includes(o)) return row[k];
+    return '';
+  };
+
+  state.assignments = rows.map(r => {
+    const sku      = findCol(r, ['SKU','METRIX','ITEM','CUST','REF','URUN','ÜRÜN']);
+    const location = findCol(r, ['LOCATION','LOC','BIN','ALAN']);
+    // cross with locations data
+    const locData  = state.locations.find(l =>
+      l.location.toUpperCase() === location.toUpperCase() ||
+      l.metrix.toUpperCase()   === sku.toUpperCase()
+    );
+    return {
+      sku,
+      location,
+      locType: locationType(location),
+      qty: locData ? locData.qty : null
+    };
+  }).filter(r => r.sku);
+
+  document.getElementById('st-assignments').textContent = `✓ ${state.assignments.length} atama yüklendi`;
+  document.getElementById('uc-assignments').classList.add('loaded');
+  updateProdStats();
+  renderProducts();
+  toast(`${state.assignments.length} ürün ataması yüklendi`);
+}
+
+function processContainer(rows, filename) {
+  const findCol = (row, opts) => {
+    for (const k of Object.keys(row)) for (const o of opts) if (k.includes(o)) return row[k];
+    return '';
+  };
+
+  state.container = rows.map(r => {
+    const metrix = findCol(r, ['CUSTOMER','CUST','REF','METRIX','SKU']);
+    const pallet = findCol(r, ['PALLET','PALET','PLT']);
+    const qty    = parseInt(findCol(r, ['QTY','QUANTITY','MIKTAR'])) || 0;
+    // Find assigned location for this metrix
+    const assignment = state.assignments.find(a => a.sku.toUpperCase() === metrix.toUpperCase());
+    const locData    = assignment
+      ? state.locations.find(l => l.location.toUpperCase() === assignment.location.toUpperCase())
+      : state.locations.find(l => l.metrix.toUpperCase() === metrix.toUpperCase());
+    return {
+      metrix, pallet, qty,
+      location:  locData ? locData.location : (assignment ? assignment.location : ''),
+      locType:   locData ? locData.type : (assignment ? assignment.locType : ''),
+      stock:     locData ? locData.qty : null
+    };
+  }).filter(r => r.metrix);
+
+  document.getElementById('st-container').textContent = `✓ ${state.container.length} satır yüklendi`;
+  document.getElementById('uc-container').classList.add('loaded');
+  updateContStats();
+  renderContainer();
+  toast(`${state.container.length} konteyner kaydı yüklendi`);
+}
+
+// ══════════════════════════════════════════════════
+//  STATS UPDATERS
+// ══════════════════════════════════════════════════
+function updateLocStats() {
+  const d = state.locations;
+  document.getElementById('loc-stats').style.display = 'grid';
+  document.getElementById('s-total').textContent   = d.length;
+  document.getElementById('s-dinamik').textContent = d.filter(r => r.type === 'dinamik').length;
+  document.getElementById('s-zasket').textContent  = d.filter(r => r.type === 'zasket').length;
+  document.getElementById('s-statik').textContent  = d.filter(r => r.type === 'statik').length;
+  document.getElementById('s-empty').textContent   = d.filter(r => r.qty === 0).length;
+  document.getElementById('s-low').textContent     = d.filter(r => r.qty > 0 && r.qty < 5).length;
+  document.getElementById('badge-loc').textContent = d.length;
+}
+
+function updateProdStats() {
+  const d = state.assignments;
+  document.getElementById('prod-stats').style.display = 'grid';
+  document.getElementById('sp-total').textContent   = d.length;
+  document.getElementById('sp-matched').textContent = d.filter(r => r.qty !== null).length;
+  document.getElementById('sp-nomatch').textContent = d.filter(r => !r.location).length;
+  document.getElementById('sp-dyn').textContent     = d.filter(r => r.locType === 'dinamik').length;
+  document.getElementById('sp-stat').textContent    = d.filter(r => r.locType === 'statik').length;
+  document.getElementById('badge-prod').textContent = d.length;
+}
+
+function updateContStats() {
+  const d = state.container;
+  document.getElementById('cont-stats').style.display = 'grid';
+  document.getElementById('sc-total').textContent  = d.length;
+  document.getElementById('sc-has-loc').textContent= d.filter(r => r.location).length;
+  document.getElementById('sc-no-loc').textContent = d.filter(r => !r.location).length;
+  document.getElementById('sc-in-dyn').textContent = d.filter(r => r.locType === 'dinamik').length;
+  document.getElementById('sc-low').textContent    = d.filter(r => r.stock !== null && r.stock < 5).length;
+  document.getElementById('sc-qty').textContent    = d.reduce((a,b) => a + b.qty, 0).toLocaleString();
+  document.getElementById('badge-cont').textContent = d.filter(r => !r.location).length || d.length;
+}
+
+// ══════════════════════════════════════════════════
+//  RENDER FUNCTIONS
+// ══════════════════════════════════════════════════
+function getFilteredLocations() {
+  const q    = document.getElementById('loc-search').value.toUpperCase();
+  const type = document.getElementById('loc-type').value;
+  const stk  = document.getElementById('loc-stock').value;
+  const tstk = document.getElementById('loc-total-stock') ? document.getElementById('loc-total-stock').value : '';
+  return state.locations.filter(r => {
+    if (q && !r.location.toUpperCase().includes(q) && !r.metrix.toUpperCase().includes(q)) return false;
+    if (type) {
+      if (type.startsWith('cat-')) {
+        const catMap = { 'cat-brake-pad': 'brake-pad', 'cat-brake-rotor': 'brake-rotor', 'cat-suspension': 'suspension' };
+        if (productCategory(r.metrix) !== catMap[type]) return false;
+      } else {
+        if (r.type !== type) return false;
+      }
+    }
+    // Per-location stock filter
+    if (stk === 'empty' && r.qty !== 0) return false;
+    if (stk === 'low'   && !(r.qty > 0 && r.qty < 5)) return false;
+    if (stk === 'ok'    && r.qty < 5) return false;
+    // Total depot stock filter
+    if (tstk) {
+      const total = r.metrix
+        ? state.locations.filter(l => l.metrix.toUpperCase() === r.metrix.toUpperCase()).reduce((s,l) => s + l.qty, 0)
+        : r.qty;
+      if (tstk === 't-empty' && total !== 0) return false;
+      if (tstk === 't-low'   && !(total > 0 && total < 10)) return false;
+      if (tstk === 't-ok'    && total < 10) return false;
+    }
+    return true;
+  });
+}
+
+function renderLocations() {
+  const data = getFilteredLocations();
+  const start = (locCurrentPage - 1) * PAGE_SIZE;
+  const page  = data.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById('loc-tbody');
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="es-icon">📭</div><p>Eşleşen location bulunamadı</p></div></td></tr>`;
+    document.getElementById('loc-page-info').textContent = '';
+    return;
+  }
+
+  tbody.innerHTML = page.map(r => {
+    // All locations for same metrix no
+    const sameMetrix = r.metrix
+      ? state.locations.filter(l => l.metrix.toUpperCase() === r.metrix.toUpperCase())
+      : [r];
+    const totalQty   = sameMetrix.reduce((sum, l) => sum + (parseInt(l.qty) || 0), 0);
+    const locCount   = sameMetrix.length;
+
+    // Breakdown tooltip: dinamik X | statik Y | zasket Z
+    const dynQty  = sameMetrix.filter(l => l.type === 'dinamik').reduce((s,l) => s + l.qty, 0);
+    const statQty = sameMetrix.filter(l => l.type === 'statik').reduce((s,l) => s + l.qty, 0);
+    const zskQty  = sameMetrix.filter(l => l.type === 'zasket').reduce((s,l) => s + l.qty, 0);
+
+    const totalCell = locCount > 1
+      ? `<span class="mono" style="font-weight:700;color:var(--green)">${totalQty.toLocaleString()}</span>
+         <span style="font-size:10px;color:var(--text3);margin-left:4px">(${locCount} loc)</span>
+         <div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">
+           ${dynQty  ? `<span class="badge dinamik" style="font-size:9px">D:${dynQty}</span>` : ''}
+           ${statQty ? `<span class="badge statik"  style="font-size:9px">S:${statQty}</span>` : ''}
+           ${zskQty  ? `<span class="badge zasket"  style="font-size:9px">Z:${zskQty}</span>` : ''}
+         </div>`
+      : `<span class="mono" style="color:var(--text3)">${totalQty.toLocaleString()}</span>`;
+
+    // Check if this location has a product assignment
+    const assigned = state.assignments.filter(a => a.location.toUpperCase() === r.location.toUpperCase());
+    const assignedBadge = assigned.length
+      ? `<span class="badge ok">✓ ${assigned.map(a => a.sku).join(', ')}</span>`
+      : `<span class="badge empty">—</span>`;
+    return `<tr onclick="showLocDetail('${r.location}')">
+      <td class="mono">${r.metrix || '—'}</td>
+      <td class="mono" style="font-weight:600">${r.location}</td>
+      <td>${typeBadge(r.type)}</td>
+      <td>${categoryBadge(r.metrix)}</td>
+      <td class="mono">${r.qty.toLocaleString()}</td>
+      <td>${totalCell}</td>
+      <td>${stockBadge(r.qty)}</td>
+      <td>${assignedBadge}</td>
+    </tr>`;
+  }).join('');
+
+  const total = data.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  document.getElementById('loc-page-info').textContent = `${start+1}–${Math.min(start+PAGE_SIZE, total)} / ${total}`;
+  document.getElementById('loc-prev').disabled = locCurrentPage <= 1;
+  document.getElementById('loc-next').disabled = locCurrentPage >= pages;
+}
+
+function filterLocations() { locCurrentPage = 1; renderLocations(); }
+function locPage(d) { locCurrentPage += d; renderLocations(); }
+
+function getFilteredProducts() {
+  const q = document.getElementById('prod-search').value.toUpperCase();
+  const f = document.getElementById('prod-filter').value;
+  return state.assignments.filter(r => {
+    if (q && !r.sku.toUpperCase().includes(q) && !r.location.toUpperCase().includes(q)) return false;
+    if (f === 'matched'  && r.qty === null) return false;
+    if (f === 'nomatch'  && r.location) return false;
+    if (f === 'dinamik'  && r.locType !== 'dinamik') return false;
+    if (f === 'statik'   && r.locType !== 'statik') return false;
+    if (f === 'zasket'   && r.locType !== 'zasket') return false;
+    return true;
+  });
+}
+
+function renderProducts() {
+  const data = getFilteredProducts();
+  const start = (prodCurrentPage - 1) * PAGE_SIZE;
+  const page  = data.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById('prod-tbody');
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="es-icon">📭</div><p>Eşleşen ürün ataması bulunamadı</p></div></td></tr>`;
+    document.getElementById('prod-page-info').textContent = '';
+    return;
+  }
+
+  tbody.innerHTML = page.map(r => {
+    const locBadge = r.location ? typeBadge(r.locType) : `<span class="badge danger">Yok</span>`;
+    const stkCell  = r.qty !== null ? stockBadge(r.qty) : `<span class="badge empty">Veri yok</span>`;
+    return `<tr onclick="showProdDetail('${r.sku}')">
+      <td class="mono" style="font-weight:600">${r.sku}</td>
+      <td class="mono">${r.location || '—'}</td>
+      <td>${locBadge}</td>
+      <td class="mono">${r.qty !== null ? r.qty.toLocaleString() : '—'}</td>
+      <td>${stkCell}</td>
+    </tr>`;
+  }).join('');
+
+  const total = data.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  document.getElementById('prod-page-info').textContent = `${start+1}–${Math.min(start+PAGE_SIZE, total)} / ${total}`;
+  document.getElementById('prod-prev').disabled = prodCurrentPage <= 1;
+  document.getElementById('prod-next').disabled = prodCurrentPage >= pages;
+}
+
+function filterProducts() { prodCurrentPage = 1; renderProducts(); }
+function prodPage(d) { prodCurrentPage += d; renderProducts(); }
+
+function getFilteredContainer() {
+  const q = document.getElementById('cont-search').value.toUpperCase();
+  const f = document.getElementById('cont-filter').value;
+  return state.container.filter(r => {
+    if (q && !r.metrix.toUpperCase().includes(q) && !(r.pallet||'').toUpperCase().includes(q)) return false;
+    if (f === 'has-loc'   && !r.location) return false;
+    if (f === 'no-loc'    && r.location) return false;
+    if (f === 'in-dyn'    && r.locType !== 'dinamik') return false;
+    if (f === 'low-stock' && !(r.stock !== null && r.stock < 5)) return false;
+    return true;
+  });
+}
+
+function renderContainer() {
+  const data = getFilteredContainer();
+  const start = (contCurrentPage - 1) * PAGE_SIZE;
+  const page  = data.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById('cont-tbody');
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="es-icon">🚢</div><p>Konteyner verisi yükle veya filtre değiştir</p></div></td></tr>`;
+    document.getElementById('cont-page-info').textContent = '';
+    return;
+  }
+
+  tbody.innerHTML = page.map(r => {
+    const locCell  = r.location
+      ? `<span class="mono cont-match">${r.location}</span>`
+      : `<span class="mono cont-nomatch">— Atanmamış</span>`;
+    const locBadge = r.location ? typeBadge(r.locType) : `<span class="badge danger">Yok</span>`;
+    const stkCell  = r.stock !== null ? stockBadge(r.stock) : `<span class="badge empty">—</span>`;
+
+    let action = '';
+    if (!r.location) action = `<span class="badge danger">📍 Yerleştir</span>`;
+    else if (r.stock !== null && r.stock < 5) action = `<span class="badge warn">⚠ Restock</span>`;
+    else if (r.locType === 'dinamik') action = `<span class="badge dinamik">📦 Dinamik</span>`;
+    else action = `<span class="badge ok">✓ Hazır</span>`;
+
+    return `<tr>
+      <td class="mono" style="font-weight:600">${r.metrix}</td>
+      <td class="mono">${r.pallet || '—'}</td>
+      <td class="mono">${r.qty.toLocaleString()}</td>
+      <td>${locCell}</td>
+      <td>${locBadge}</td>
+      <td>${stkCell}</td>
+      <td>${action}</td>
+    </tr>`;
+  }).join('');
+
+  const total = data.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  document.getElementById('cont-page-info').textContent = `${start+1}–${Math.min(start+PAGE_SIZE, total)} / ${total}`;
+  document.getElementById('cont-prev').disabled = contCurrentPage <= 1;
+  document.getElementById('cont-next').disabled = contCurrentPage >= pages;
+}
+
+function filterContainer() { contCurrentPage = 1; renderContainer(); }
+function contPage(d) { contCurrentPage += d; renderContainer(); }
+
+// ══════════════════════════════════════════════════
+//  SORT
+// ══════════════════════════════════════════════════
+function sortTable(tbl, col) {
+  const key = tbl + '_' + col;
+  state.sortDir[key] = !state.sortDir[key];
+  const asc = state.sortDir[key];
+
+  const sorter = (a, b) => {
+    let av = a[col], bv = b[col];
+    if (col === 'qty' || col === 'stock') {
+      av = parseInt(av) || 0; bv = parseInt(bv) || 0;
+      return asc ? av - bv : bv - av;
+    }
+    if (col === 'totalQty') {
+      const getTotal = r => r.metrix
+        ? state.locations.filter(l => l.metrix.toUpperCase() === r.metrix.toUpperCase()).reduce((s,l) => s+l.qty, 0)
+        : r.qty;
+      av = getTotal(a); bv = getTotal(b);
+      return asc ? av - bv : bv - av;
+    }
+    av = (av || '').toString().toUpperCase();
+    bv = (bv || '').toString().toUpperCase();
+    return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+  };
+
+  if (tbl === 'locations')  { state.locations.sort(sorter);   renderLocations(); }
+  if (tbl === 'products')   { state.assignments.sort(sorter);  renderProducts(); }
+  if (tbl === 'container')  { state.container.sort(sorter);    renderContainer(); }
+}
+
+// ══════════════════════════════════════════════════
+//  DETAIL PANEL
+// ══════════════════════════════════════════════════
+function showLocDetail(loc) {
+  const r = state.locations.find(x => x.location === loc);
+  if (!r) return;
+  const assignments = state.assignments.filter(a => a.location.toUpperCase() === loc.toUpperCase());
+
+  // All locations for same metrix
+  const sameMetrix = r.metrix
+    ? state.locations.filter(l => l.metrix.toUpperCase() === r.metrix.toUpperCase())
+    : [r];
+  const totalQty = sameMetrix.reduce((s,l) => s + l.qty, 0);
+
+  const locBreakdown = sameMetrix.map(l =>
+    `<div class="dp-row">
+      <span class="dp-key">${l.location} <span style="color:var(--text3);font-size:10px">(${l.type})</span></span>
+      <span class="dp-val">${l.qty.toLocaleString()}</span>
+    </div>`
+  ).join('');
+
+  document.getElementById('dp-title').textContent = loc;
+  document.getElementById('dp-content').innerHTML = `
+    <div class="dp-row"><span class="dp-key">Metrix No</span><span class="dp-val">${r.metrix || '—'}</span></div>
+    <div class="dp-row"><span class="dp-key">Tip</span><span class="dp-val">${r.type}</span></div>
+    <div class="dp-row"><span class="dp-key">Bu Location Stok</span><span class="dp-val">${r.qty.toLocaleString()}</span></div>
+    <div class="dp-row" style="background:rgba(62,207,142,.05);border-radius:6px;padding:8px;margin:4px 0">
+      <span class="dp-key" style="color:var(--green);font-weight:600">Toplam Stok (Tüm Locationlar)</span>
+      <span class="dp-val" style="color:var(--green);font-size:16px;font-weight:700">${totalQty.toLocaleString()}</span>
+    </div>
+    ${sameMetrix.length > 1 ? `<div style="margin:8px 0 4px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px">Location Dağılımı</div>${locBreakdown}` : ''}
+    <div class="dp-row"><span class="dp-key">Atanan SKU</span><span class="dp-val">${assignments.length ? assignments.map(a=>a.sku).join(', ') : '—'}</span></div>
+  `;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function showProdDetail(sku) {
+  const r = state.assignments.find(x => x.sku === sku);
+  if (!r) return;
+  document.getElementById('dp-title').textContent = sku;
+  document.getElementById('dp-content').innerHTML = `
+    <div class="dp-row"><span class="dp-key">Atanan Location</span><span class="dp-val">${r.location || '—'}</span></div>
+    <div class="dp-row"><span class="dp-key">Location Tipi</span><span class="dp-val">${r.locType || '—'}</span></div>
+    <div class="dp-row"><span class="dp-key">Mevcut Stok</span><span class="dp-val">${r.qty !== null ? r.qty : '—'}</span></div>
+  `;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function closeDetail(e) {
+  if (e.target === document.getElementById('detailOverlay')) closeDetailPanel();
+}
+function closeDetailPanel() {
+  document.getElementById('detailOverlay').classList.remove('open');
+}
+
+// ══════════════════════════════════════════════════
+//  EXPORT CSV
+// ══════════════════════════════════════════════════
+function exportCSV(type) {
+  let headers, rows;
+  if (type === 'locations') {
+    headers = ['Metrix No','Location','Tip','Depo QTY','Stok Durumu'];
+    rows    = getFilteredLocations().map(r => [r.metrix, r.location, r.type, r.qty, stockStatus(r.qty)]);
+  } else if (type === 'products') {
+    headers = ['SKU','Location','Location Tipi','Mevcut Stok'];
+    rows    = getFilteredProducts().map(r => [r.sku, r.location, r.locType, r.qty ?? '']);
+  } else if (type === 'container') {
+    headers = ['Metrix','Pallet','Gelen QTY','Location','Location Tipi','Mevcut Stok','Aksiyon'];
+    rows    = getFilteredContainer().map(r => {
+      let act = !r.location ? 'Yerlestir' : r.stock < 5 ? 'Restock' : r.locType === 'dinamik' ? 'Dinamik' : 'Hazir';
+      return [r.metrix, r.pallet, r.qty, r.location, r.locType, r.stock ?? '', act];
+    });
+  } else if (type === 'forklift-moves') {
+    headers = ['SKU','Kaynak Location','Hedef Location','Adet','Islem','Saat'];
+    rows    = (state.moveLog||[]).map(r => [r.sku, r.fromLoc, r.toLoc, r.qty, r.action, r.time]);
+  } else if (type === 'forklift') {
+    headers = ['Oncelik','Metrix No','Kategori','Statik Locationlar','Statik Stok','Dinamik Locationlar','Dinamik Stok','3 Ay Satis'];
+    const allFork = [
+      ...(state.forkP1||[]).map(r => ['P1-Hemen Kaldir', r.metrix, r.category, r.staticLocs.map(l=>l.location).join('|'), r.staticQty, '', '', r.sales]),
+      ...(state.forkP2||[]).map(r => ['P2-Kaldirilabilir', r.metrix, r.category, r.staticLocs.map(l=>l.location).join('|'), r.staticQty, '', '', r.sales]),
+      ...(state.forkP3||[]).map(r => ['P3-Dinamikte Var', r.metrix, r.category, r.staticLocs.map(l=>l.location).join('|'), r.staticQty, r.dynLocs.map(l=>l.location).join('|'), r.dynQty, r.sales]),
+      ...(state.forkP4||[]).map(r => ['P4-Bekleyebilir', r.metrix, r.category, r.staticLocs.map(l=>l.location).join('|'), r.staticQty, '', '', r.sales]),
+    ];
+    rows = allFork;
+  } else if (type === 'snapshot') {
+    headers = ['Metrix No','Kategori','Location','Tip','Baslangic','Bitis','Fark','Degisim','Durum'];
+    rows    = getFilteredSnap().map(r => [r.metrix, r.category, r.location, r.locType, r.start, r.end, r.diff, r.pct != null ? r.pct + '%' : '', r.status]);
+  }
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'wimas-' + type + '-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  toast('CSV indirildi');
+}
+
+// ══════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════
+document.getElementById('headerDate').textContent =
+  new Date().toLocaleDateString('tr-TR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+// Init empty table messages
+['loc-tbody','prod-tbody','cont-tbody'].forEach(id => {
+  document.getElementById(id).innerHTML = `
+    <tr><td colspan="7"><div class="empty-state">
+      <div class="es-icon">⬆️</div>
+      <p>Yukarıdan dosya yükle</p>
+    </div></td></tr>`;
+});
+
+// ══════════════════════════════════════════════════
+//  SNAPSHOT STATE & LOGIC
+// ══════════════════════════════════════════════════
+state.snapStart = [];   // [{metrix, location, qty}]
+state.snapEnd   = [];
+state.snapDiff  = [];   // computed
+state.snapSortDir = {};
+let snapCurrentPage = 1;
+
+function processSnapFile(rows, which) {
+  const findCol = (row, opts) => {
+    for (const k of Object.keys(row)) for (const o of opts) if (k.includes(o)) return row[k];
+    return '';
+  };
+  const parsed = rows.map(r => ({
+    metrix:   findCol(r, ['METRIX','CUST','REF','SKU','NO']),
+    location: findCol(r, ['LOCATION','LOC','BIN','ALAN']),
+    qty:      parseInt(findCol(r, ['QTY','QUANTITY','MIKTAR','STOK','DEPO'])) || 0
+  })).filter(r => r.metrix);
+
+  if (which === 'snap-start') {
+    state.snapStart = parsed;
+    document.getElementById('st-snap-start').textContent = `✓ ${parsed.length} satır yüklendi`;
+    document.getElementById('uc-snap-start').classList.add('loaded');
+    toast(`Başlangıç snapshot: ${parsed.length} kayıt`);
+  } else {
+    state.snapEnd = parsed;
+    document.getElementById('st-snap-end').textContent = `✓ ${parsed.length} satır yüklendi`;
+    document.getElementById('uc-snap-end').classList.add('loaded');
+    toast(`Bitiş snapshot: ${parsed.length} kayıt`);
+  }
+  if (state.snapStart.length && state.snapEnd.length) computeSnapDiff();
+}
+
+// ── SNAP MODE ──
+let snapMode = 'location'; // 'location' | 'depot'
+
+function setSnapMode(mode) {
+  snapMode = mode;
+  document.getElementById('smb-location').classList.toggle('active', mode === 'location');
+  document.getElementById('smb-depot').classList.toggle('active', mode === 'depot');
+  document.getElementById('snap-mode-desc').textContent = mode === 'location'
+    ? 'Her location satır satır gösteriliyor'
+    : 'Aynı SKU tüm locationlarda toplanıyor — genel depo hareketi';
+  snapCurrentPage = 1;
+  if (state.snapDiff.length) {
+    updateSnapStats();
+    renderSnapTopSKU();
+    renderSnapTopLoc();
+    renderSnapZeroed();
+    renderSnap();
+  }
+}
+
+function getSnapRows() {
+  // location mode: raw diff per location
+  // depot mode: aggregate by metrix
+  if (snapMode === 'location') return state.snapDiff;
+  const byMetrix = {};
+  state.snapDiff.forEach(r => {
+    if (!byMetrix[r.metrix]) {
+      byMetrix[r.metrix] = { metrix: r.metrix, location: '(tüm locationlar)', locType: '—', start: 0, end: 0, diff: 0, category: r.category };
+    }
+    byMetrix[r.metrix].start += r.start;
+    byMetrix[r.metrix].end   += r.end;
+    byMetrix[r.metrix].diff  += r.diff;
+  });
+  return Object.values(byMetrix)
+    .map(r => ({
+      ...r,
+      pct: r.start > 0 ? Math.round((r.diff / r.start) * 100) : null,
+      // Depot modunda: toplam end=0 ise → bitti (location silindi),
+      // diff=0 ise → sadece location transferi → gösterme
+      status: r.end === 0 && r.start > 0 ? 'zeroed'
+            : r.diff < 0 ? 'decreased'
+            : r.diff > 0 ? 'increased'
+            : 'same'
+    }))
+    .filter(r => r.end === 0 || r.diff !== 0); // transfer olanları çıkar, ama biten ürünleri tut
+}
+
+function computeSnapDiff() {
+  // Build lookup: key = metrix|location
+  const key = (m, l) => (m + '|' + l).toUpperCase();
+  const startMap = {};
+  state.snapStart.forEach(r => { startMap[key(r.metrix, r.location)] = r; });
+  const endMap = {};
+  state.snapEnd.forEach(r => { endMap[key(r.metrix, r.location)] = r; });
+
+  // Union of all keys
+  const allKeys = new Set([...Object.keys(startMap), ...Object.keys(endMap)]);
+  const diff = [];
+  allKeys.forEach(k => {
+    const s = startMap[k];
+    const e = endMap[k];
+    const metrix   = (s || e).metrix;
+    const location = (s || e).location;
+    const startQty = s ? s.qty : 0;
+    const endQty   = e ? e.qty : 0;
+    const delta    = endQty - startQty;  // negative = sold/decreased
+    const pct      = startQty > 0 ? Math.round((delta / startQty) * 100) : null;
+    diff.push({ metrix, location, start: startQty, end: endQty, diff: delta, pct,
+      locType: locationType(location),
+      category: productCategory(metrix),
+      status: endQty === 0 && startQty > 0 ? 'zeroed'
+            : delta < 0 ? 'decreased'
+            : delta > 0 ? 'increased'
+            : 'same'
+    });
+  });
+
+  state.snapDiff = diff;
+  updateSnapStats();
+  renderSnapTopSKU();
+  renderSnapTopLoc();
+  renderSnapZeroed();
+  renderSnap();
+  document.getElementById('snap-mode-bar').style.display = 'flex';
+  document.getElementById('snap-mode-bar').style.alignItems = 'center';
+  document.getElementById('snap-dashboard').style.display = 'block';
+  document.getElementById('badge-snap').textContent = diff.filter(r => r.status === 'zeroed').length || diff.length;
+}
+
+function updateSnapStats() {
+  const d = getSnapRows();
+  // Zeroed: in depot mode, count SKUs where total end=0
+  // In location mode, count location rows where end=0
+  let zeroedCount;
+  if (snapMode === 'depot') {
+    // aggregate by metrix and count those with total end=0
+    const byM = {};
+    state.snapDiff.forEach(r => {
+      if (!byM[r.metrix]) byM[r.metrix] = { start: 0, end: 0 };
+      byM[r.metrix].start += r.start;
+      byM[r.metrix].end   += r.end;
+    });
+    zeroedCount = Object.values(byM).filter(r => r.end === 0 && r.start > 0).length;
+  } else {
+    zeroedCount = state.snapDiff.filter(r => r.status === 'zeroed').length;
+  }
+  document.getElementById('sn-total').textContent     = snapMode === 'depot' ? d.length : [...new Set(d.map(r => r.metrix))].length;
+  document.getElementById('sn-decreased').textContent = d.filter(r => r.status === 'decreased').length;
+  document.getElementById('sn-zeroed').textContent    = zeroedCount;
+  document.getElementById('sn-increased').textContent = d.filter(r => r.status === 'increased').length;
+  document.getElementById('sn-same').textContent      = d.filter(r => r.status === 'same').length;
+  const totalSold = d.filter(r => r.diff < 0).reduce((s,r) => s + Math.abs(r.diff), 0);
+  document.getElementById('sn-sold').textContent      = totalSold.toLocaleString();
+}
+
+function renderSnapTopSKU() {
+  // Aggregate by metrix (sum diff across all locations)
+  const byMetrix = {};
+  state.snapDiff.forEach(r => {
+    if (!byMetrix[r.metrix]) byMetrix[r.metrix] = { metrix: r.metrix, start: 0, end: 0, category: r.category };
+    byMetrix[r.metrix].start += r.start;
+    byMetrix[r.metrix].end   += r.end;
+  });
+  const top = Object.values(byMetrix)
+    .map(r => ({ ...r, diff: r.end - r.start }))
+    .filter(r => r.diff < 0)
+    .sort((a,b) => a.diff - b.diff)
+    .slice(0, 15);
+
+  const tbody = document.getElementById('snap-top-sku');
+  if (!top.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">Azalan SKU yok</td></tr>'; return; }
+  tbody.innerHTML = top.map((r, i) => {
+    const abs = Math.abs(r.diff);
+    const pct = r.start > 0 ? Math.round((abs / r.start) * 100) : 0;
+    const bar = `<div style="height:3px;border-radius:2px;background:var(--border);margin-top:4px"><div style="width:${Math.min(pct,100)}%;height:100%;background:var(--red);border-radius:2px"></div></div>`;
+    return `<tr>
+      <td class="mono" style="font-weight:600">${i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':''}${r.metrix}</td>
+      <td>${categoryBadge(r.metrix)}</td>
+      <td class="mono">${r.start.toLocaleString()}</td>
+      <td class="mono">${r.end.toLocaleString()}</td>
+      <td class="mono" style="color:var(--red);font-weight:700">−${abs.toLocaleString()}</td>
+      <td><span style="color:var(--orange);font-family:var(--mono)">${pct}%</span>${bar}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderSnapTopLoc() {
+  const tbody = document.getElementById('snap-top-loc');
+  const locParent = document.getElementById('snap-top-loc-section');
+  if (snapMode === 'depot') {
+    if (locParent) locParent.style.display = 'none';
+    return;
+  }
+  if (locParent) locParent.style.display = 'block';
+  const top = [...state.snapDiff]
+    .filter(r => r.diff < 0)
+    .sort((a,b) => a.diff - b.diff)
+    .slice(0, 15);
+  if (!top.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">Azalan location yok</td></tr>'; return; }
+  tbody.innerHTML = top.map(r => `<tr>
+    <td class="mono" style="font-weight:600">${r.location}</td>
+    <td>${typeBadge(r.locType)}</td>
+    <td class="mono">${r.start.toLocaleString()}</td>
+    <td class="mono">${r.end.toLocaleString()}</td>
+    <td class="mono" style="color:var(--red);font-weight:700">−${Math.abs(r.diff).toLocaleString()}</td>
+  </tr>`).join('');
+}
+
+function renderSnapZeroed() {
+  // Depot mode: show SKUs where total depot qty = 0 (all locations gone/deleted)
+  // Location mode: show individual locations that hit 0
+  let sourceData;
+  if (snapMode === 'depot') {
+    // Build per-SKU totals and find truly zeroed ones
+    const byM = {};
+    state.snapDiff.forEach(r => {
+      if (!byM[r.metrix]) byM[r.metrix] = { metrix: r.metrix, start: 0, end: 0, location: '(tüm locationlar)', locType: '—', category: r.category };
+      byM[r.metrix].start += r.start;
+      byM[r.metrix].end   += r.end;
+    });
+    sourceData = Object.values(byM).filter(r => r.end === 0 && r.start > 0);
+  } else {
+    sourceData = state.snapDiff.filter(r => r.status === 'zeroed');
+  }
+  const zeroed = sourceData.sort((a,b) => b.start - a.start);
+  const tbody = document.getElementById('snap-zeroed');
+  if (!zeroed.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--green);padding:16px">✓ Sıfıra düşen ürün yok</td></tr>';
+    return;
+  }
+  tbody.innerHTML = zeroed.map(r => {
+    // In depot mode, also show total depot stock so user knows if stock exists elsewhere
+    const depotBadge = `<span class="badge danger">🚨 Restock Gerekli</span>`;
+    return `<tr>
+      <td class="mono" style="font-weight:600">${r.metrix}</td>
+      <td>${categoryBadge(r.metrix)}</td>
+      <td class="mono">${r.location}</td>
+      <td class="mono">${r.start.toLocaleString()}</td>
+      <td class="mono" style="color:var(--red)">0</td>
+      <td>${depotBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+function getFilteredSnap() {
+  const q = document.getElementById('snap-search').value.toUpperCase();
+  const f = document.getElementById('snap-filter').value;
+  return getSnapRows().filter(r => {
+    if (q && !r.metrix.toUpperCase().includes(q) && !r.location.toUpperCase().includes(q)) return false;
+    if (f === 'decreased' && r.status !== 'decreased') return false;
+    if (f === 'zeroed'    && r.status !== 'zeroed') return false;
+    if (f === 'increased' && r.status !== 'increased') return false;
+    if (f === 'same'      && r.status !== 'same') return false;
+    if (f === 'cat-brake-pad'   && r.category !== 'brake-pad') return false;
+    if (f === 'cat-brake-rotor' && r.category !== 'brake-rotor') return false;
+    if (f === 'cat-suspension'  && r.category !== 'suspension') return false;
+    return true;
+  });
+}
+
+function renderSnap() {
+  const data = getFilteredSnap();
+  const start = (snapCurrentPage - 1) * PAGE_SIZE;
+  const page  = data.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById('snap-tbody');
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="es-icon">📊</div><p>Eşleşen kayıt yok</p></div></td></tr>`;
+    document.getElementById('snap-page-info').textContent = '';
+    return;
+  }
+
+  tbody.innerHTML = page.map(r => {
+    const abs  = Math.abs(r.diff);
+    const pct  = r.pct !== null ? r.pct : '—';
+    const diffCell = r.diff < 0
+      ? `<span style="color:var(--red);font-weight:700;font-family:var(--mono)">−${abs.toLocaleString()}</span>`
+      : r.diff > 0
+      ? `<span style="color:var(--green);font-weight:700;font-family:var(--mono)">+${r.diff.toLocaleString()}</span>`
+      : `<span style="color:var(--text3);font-family:var(--mono)">0</span>`;
+    const pctCell = r.pct !== null
+      ? `<span style="font-family:var(--mono);color:${r.diff<0?'var(--orange)':r.diff>0?'var(--green)':'var(--text3)'}">${r.diff>0?'+':''}${r.pct}%</span>`
+      : '—';
+    const statusMap = {
+      zeroed:    '<span class="badge danger">🚨 Bitti</span>',
+      decreased: '<span class="badge warn">↓ Azaldı</span>',
+      increased: '<span class="badge ok">↑ Arttı</span>',
+      same:      '<span class="badge empty">= Aynı</span>'
+    };
+    const locCols = snapMode === 'location'
+      ? `<td class="mono">${r.location}</td><td>${typeBadge(r.locType)}</td>`
+      : `<td class="mono" style="color:var(--text3);font-size:11px">—</td><td>—</td>`;
+    return `<tr>
+      <td class="mono" style="font-weight:600">${r.metrix}</td>
+      <td>${categoryBadge(r.metrix)}</td>
+      ${locCols}
+      <td class="mono">${r.start.toLocaleString()}</td>
+      <td class="mono">${r.end.toLocaleString()}</td>
+      <td>${diffCell}</td>
+      <td>${pctCell}</td>
+      <td>${statusMap[r.status]}</td>
+    </tr>`;
+  }).join('');
+
+  const total = data.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  document.getElementById('snap-page-info').textContent = `${start+1}–${Math.min(start+PAGE_SIZE,total)} / ${total}`;
+  document.getElementById('snap-prev').disabled = snapCurrentPage <= 1;
+  document.getElementById('snap-next').disabled = snapCurrentPage >= pages;
+}
+
+function filterSnapshot() { snapCurrentPage = 1; renderSnap(); }
+function snapPage(d) { snapCurrentPage += d; renderSnap(); }
+
+function sortSnap(col) {
+  const key = 'snap_' + col;
+  state.snapSortDir[key] = !state.snapSortDir[key];
+  const asc = state.snapSortDir[key];
+  state.snapDiff.sort((a,b) => {
+    let av = a[col], bv = b[col];
+    if (typeof av === 'number') return asc ? av - bv : bv - av;
+    av = (av||'').toUpperCase(); bv = (bv||'').toUpperCase();
+    return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+  renderSnap();
+}
+
+// Hook snapshot into existing parseCSV
+const _origParseCSV = parseCSV;
+
+
+// ══════════════════════════════════════════════════
+//  FORKLIFT PRIORITY SYSTEM
+// ══════════════════════════════════════════════════
+state.forkLoc   = [];  // {metrix, location, type, qty}
+state.forkSales = {};  // {metrix: salesQty}
+
+function processForkFile(rows, type) {
+  const findCol = (row, opts) => {
+    for (const k of Object.keys(row)) for (const o of opts) if (k.includes(o)) return row[k];
+    return '';
+  };
+
+  if (type === 'fork-loc') {
+    state.forkLoc = rows.map(r => ({
+      metrix:   findCol(r, ['METRIX','CUST','REF','SKU','NO']),
+      location: findCol(r, ['LOCATION','LOC','BIN','ALAN']),
+      qty:      parseInt(findCol(r, ['QTY','QUANTITY','MIKTAR','STOK','DEPO'])) || 0,
+    })).filter(r => r.metrix && r.location);
+    // annotate type
+    state.forkLoc.forEach(r => r.type = locationType(r.location));
+    document.getElementById('st-fork-loc').textContent = `✓ ${state.forkLoc.length} satır yüklendi`;
+    document.getElementById('uc-fork-loc').classList.add('loaded');
+    toast(`Location listesi: ${state.forkLoc.length} kayıt`);
+  } else {
+    // Sales file: flexible — SKU + qty sold
+    state.forkSales = {};
+    rows.forEach(r => {
+      const sku  = findCol(r, ['COMPONENT','METRIX','SKU','CUST','REF','ITEM','URUN']);
+      const sold = parseInt(findCol(r, ['TOTAL','NEEDED','SATIS','SOLD','QTY','QUANTITY','ORDERS','ADET'])) || 0;
+      if (sku) {
+        const u = sku.toUpperCase();
+        state.forkSales[u] = (state.forkSales[u] || 0) + sold;
+      }
+    });
+    document.getElementById('st-fork-sales').textContent = `✓ ${Object.keys(state.forkSales).length} SKU yüklendi`;
+    document.getElementById('uc-fork-sales').classList.add('loaded');
+    toast(`Satış verisi: ${Object.keys(state.forkSales).length} SKU`);
+  }
+
+  if (state.forkLoc.length) computeForkPriorities();
+}
+
+function computeForkPriorities() {
+  // Group by metrix
+  const byMetrix = {};
+  state.forkLoc.forEach(r => {
+    const m = r.metrix.toUpperCase();
+    if (!byMetrix[m]) byMetrix[m] = { metrix: r.metrix, staticLocs: [], dynLocs: [] };
+    if (r.type === 'statik' || r.type === 'zasket') byMetrix[m].staticLocs.push(r);
+    else byMetrix[m].dynLocs.push(r);
+  });
+
+  // Group by location — find locations with mixed SKUs (some need moving, some removing)
+  const byLocation = {};
+  state.forkLoc.forEach(r => {
+    if (r.type !== 'statik' && r.type !== 'zasket') return;
+    const loc = r.location.toUpperCase();
+    if (!byLocation[loc]) byLocation[loc] = { location: r.location, type: r.type, skus: [] };
+    byLocation[loc].skus.push(r);
+  });
+
+  // Only SKUs that have at least one static location
+  const staticSKUs = Object.values(byMetrix).filter(r => r.staticLocs.length > 0);
+
+  const p1 = [], p2 = [], p3 = [], p4 = [];
+
+  staticSKUs.forEach(r => {
+    const sales     = state.forkSales[r.metrix.toUpperCase()] || 0;
+    const staticQty = r.staticLocs.reduce((s,l) => s + l.qty, 0);
+    const dynQty    = r.dynLocs.reduce((s,l) => s + l.qty, 0);
+    const hasDyn    = r.dynLocs.length > 0;
+    const noSales   = sales === 0;
+
+    r.sales     = sales;
+    r.staticQty = staticQty;
+    r.dynQty    = dynQty;
+
+    if (hasDyn) {
+      p3.push(r);   // Dinamikte zaten var → statiki kaldır
+    } else if (noSales) {
+      p1.push(r);   // Satmıyor, sadece statik → kaldır
+    } else {
+      p2.push(r);   // Satıyor ama sadece statik → önce dinamiğe aç, sonra kaldır
+    }
+  });
+
+  // Mixed location warning: locations where some SKUs go to dynamic (p2) and some get removed (p1/p3)
+  const mixedLocs = [];
+  Object.values(byLocation).forEach(locObj => {
+    const locSkuKeys = locObj.skus.map(s => s.metrix.toUpperCase());
+    const hasMoveTo  = locSkuKeys.some(k => p2.find(r => r.metrix.toUpperCase() === k));
+    const hasRemove  = locSkuKeys.some(k => p1.find(r => r.metrix.toUpperCase() === k) || p3.find(r => r.metrix.toUpperCase() === k));
+    if (hasMoveTo && hasRemove) {
+      mixedLocs.push({
+        ...locObj,
+        moveSkus:   locObj.skus.filter(s => p2.find(r => r.metrix.toUpperCase() === s.metrix.toUpperCase())),
+        removeSkus: locObj.skus.filter(s => p1.find(r => r.metrix.toUpperCase() === s.metrix.toUpperCase()) || p3.find(r => r.metrix.toUpperCase() === s.metrix.toUpperCase()))
+      });
+    }
+  });
+
+  const byQty   = (a,b) => b.staticQty - a.staticQty;
+  const bySales = (a,b) => b.sales - a.sales;
+  p1.sort(byQty); p2.sort(bySales); p3.sort(bySales);
+
+  state.forkP1 = p1; state.forkP2 = p2; state.forkP3 = p3; state.forkP4 = [];
+  state.forkMixed = mixedLocs;
+
+  document.getElementById('fk-total').textContent = staticSKUs.length;
+  document.getElementById('fk-p1').textContent    = p1.length;
+  document.getElementById('fk-p2').textContent    = p2.length;
+  document.getElementById('fk-p3').textContent    = p3.length;
+  document.getElementById('fk-p4').textContent    = mixedLocs.length;
+  document.getElementById('badge-fork').textContent = p1.length + p2.length + p3.length;
+
+  renderForkP1(); renderForkP2(); renderForkP3(); renderForkMixed();
+  forkCurrentPage = 1;
+  renderUnifiedTable();
+  document.getElementById('fork-dashboard').style.display = 'block';
+}
+
+function salesCell(sales) {
+  if (!Object.keys(state.forkSales).length) return '<span class="badge empty">Veri yok</span>';
+  if (sales === 0) return '<span class="badge danger">0 — Satmıyor</span>';
+  if (sales < 10)  return `<span class="badge warn">${sales} — Az</span>`;
+  return `<span class="badge ok">${sales} — Aktif</span>`;
+}
+
+function renderForkP1() {
+  const tbody = document.getElementById('fork-p1-tbody');
+  if (!tbody) return;
+  const filteredP1 = applyFilter(state.forkP1, 'p1');
+  if (!filteredP1.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--green);padding:16px">✓ Bu kategoride ürün yok</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filteredP1.map(r => `<tr>
+    <td class="mono" style="font-weight:700;color:var(--red)">${r.metrix}</td>
+    <td>${categoryBadge(r.metrix)}</td>
+    <td class="mono" style="font-size:11px">${r.staticLocs.map(l=>l.location).join(', ')}</td>
+    <td class="mono">${r.staticQty.toLocaleString()}</td>
+    <td>${salesCell(r.sales)}</td>
+    <td><span class="badge danger">🗑 Kaldır</span></td>
+  </tr>`).join('');
+}
+
+function renderForkP2() {
+  const tbody = document.getElementById('fork-p2-tbody');
+  if (!tbody) return;
+  if (!filteredP2.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--green);padding:16px">✓ Bu kategoride ürün yok</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filteredP2.map(r => `<tr>
+  const filteredP2 = applyFilter(state.forkP2, 'p2');
+    <td class="mono" style="font-weight:700;color:var(--yellow)">${r.metrix}</td>
+    <td>${categoryBadge(r.metrix)}</td>
+    <td class="mono" style="font-size:11px">${r.staticLocs.map(l=>l.location).join(', ')}</td>
+    <td class="mono">${r.staticQty.toLocaleString()}</td>
+    <td>${salesCell(r.sales)}</td>
+    <td><span class="badge warn">🟡 Önce Taşı</span></td>
+  </tr>`).join('');
+}
+
+function renderForkP3() {
+  const tbody = document.getElementById('fork-p3-tbody');
+  if (!tbody) return;
+  if (!filteredP3.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--green);padding:16px">✓ Bu kategoride ürün yok</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filteredP3.map(r => `<tr>
+  const filteredP3 = applyFilter(state.forkP3, 'p3');
+    <td class="mono" style="font-weight:700;color:var(--accent)">${r.metrix}</td>
+    <td>${categoryBadge(r.metrix)}</td>
+    <td class="mono" style="font-size:11px;color:var(--text3)">${r.staticLocs.map(l=>l.location).join(', ')}</td>
+    <td class="mono" style="color:var(--text3)">${r.staticQty.toLocaleString()}</td>
+    <td class="mono" style="font-size:11px">${r.dynLocs.map(l=>l.location).join(', ')}</td>
+    <td class="mono" style="color:var(--green)">${r.dynQty.toLocaleString()}</td>
+    <td>${salesCell(r.sales)}</td>
+  </tr>`).join('');
+}
+
+function renderForkMixed() {
+  const q = (document.getElementById('fork-search')||{value:''}).value.toUpperCase();
+  const data = (state.forkMixed||[]).filter(r =>
+    !q || r.location.toUpperCase().includes(q) ||
+    r.moveSkus.some(s => s.metrix.toUpperCase().includes(q)) ||
+    r.removeSkus.some(s => s.metrix.toUpperCase().includes(q))
+  );
+  const tbody = document.getElementById('fork-p4-tbody');
+  if (!tbody) return;
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--green);padding:16px">✓ Karışık location yok</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(r => {
+    const moveBadges   = r.moveSkus.map(s =>
+      `<div style="margin-bottom:3px"><span class="mono" style="color:var(--yellow);font-weight:600">${s.metrix}</span> <span style="color:var(--text3);font-size:10px">${s.qty} adet</span></div>`
+    ).join('');
+    const removeBadges = r.removeSkus.map(s =>
+      `<div style="margin-bottom:3px"><span class="mono" style="color:var(--red);font-weight:600">${s.metrix}</span> <span style="color:var(--text3);font-size:10px">${s.qty} adet</span></div>`
+    ).join('');
+    return `<tr style="background:rgba(245,149,66,.04)">
+      <td class="mono" style="font-weight:700;color:var(--orange)">${r.location}</td>
+      <td>${typeBadge(r.type)}</td>
+      <td style="padding:8px 14px">${moveBadges || '<span style="color:var(--text3)">—</span>'}</td>
+      <td style="padding:8px 14px">${removeBadges || '<span style="color:var(--text3)">—</span>'}</td>
+      <td class="mono">${r.skus.length}</td>
+    </tr>`;
+  }).join('');
+}
+
+
+// ══════════════════════════════════════════════════
+//  SCANNER & MOVE SYSTEM
+// ══════════════════════════════════════════════════
+state.moveLog   = [];   // [{sku, fromLoc, toLoc, qty, action, time}]
+state.scanSKU   = null; // currently scanned SKU data
+
+function handleScanKey(e, field) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (field === 'sku') {
+      const val = document.getElementById('scan-sku-input').value.trim();
+      if (val) { lookupSKU(val); document.getElementById('scan-loc-input').focus(); }
+    } else if (field === 'loc') {
+      document.getElementById('scan-qty-input').focus();
+    } else if (field === 'qty') {
+      confirmScanMove();
+    }
+  }
+}
+
+function lookupSKU(sku) {
+  const u = (sku || '').toUpperCase().trim();
+  if (u.length < 3) {
+    document.getElementById('scan-result').classList.remove('show');
+    document.getElementById('scanner-bar').className = 'scanner-bar';
+    return;
+  }
+  // Find in forkLoc
+  const locs = state.forkLoc.filter(r => r.metrix.toUpperCase() === u);
+  if (!locs.length) {
+    setScanError(`"${sku}" bulunamadı — location listesinde yok`);
+    return;
+  }
+  // Determine priority
+  const p1match = (state.forkP1||[]).find(r => r.metrix.toUpperCase() === u);
+  const p2match = (state.forkP2||[]).find(r => r.metrix.toUpperCase() === u);
+  const p3match = (state.forkP3||[]).find(r => r.metrix.toUpperCase() === u);
+
+  const priority = p1match ? '🔴 Kaldır' : p2match ? '🟡 Dinamiğe Taşı' : p3match ? '🔵 Statiki Kaldır (Dinamikte Var)' : '✅ Listede Yok';
+  const staticLocs = locs.filter(l => l.type === 'statik' || l.type === 'zasket');
+  const totalQty   = staticLocs.reduce((s,l) => s + l.qty, 0);
+
+  state.scanSKU = { sku: locs[0].metrix, locs, staticLocs, totalQty, priority };
+
+  // Populate header fields
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  setVal('sr-sku',      locs[0].metrix);
+  setVal('sr-priority', priority);
+
+  // Render per-location rows
+  const container = document.getElementById('sr-loc-rows');
+  if (container) {
+    const locRows = (staticLocs.length ? staticLocs : locs);
+    container.innerHTML = `
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">
+        Kaynak Location Seç — Hedef Location Gir — Adet Gir
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">
+            <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">Seç</th>
+            <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">Kaynak Location</th>
+            <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">Mevcut Stok</th>
+            <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">Hedef Location</th>
+            <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">Adet</th>
+            <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">İşlem</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${locRows.map((l,i) => `
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:6px 8px">
+                <input type="checkbox" id="loc-chk-${i}" style="cursor:pointer;width:16px;height:16px">
+              </td>
+              <td style="padding:6px 8px;font-family:var(--mono);font-weight:600">${l.location}</td>
+              <td style="padding:6px 8px;font-family:var(--mono)">${l.qty}</td>
+              <td style="padding:6px 8px">
+                <input id="loc-target-${i}" placeholder="Hedef..." style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px 8px;color:var(--text);font-family:var(--mono);font-size:12px;width:140px;outline:none"
+                  value="${document.getElementById('scan-loc-input').value}"
+                  onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+              </td>
+              <td style="padding:6px 8px">
+                <input id="loc-qty-${i}" type="number" placeholder="Tümü" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px 8px;color:var(--text);font-family:var(--mono);font-size:12px;width:80px;outline:none"
+                  onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+              </td>
+              <td style="padding:6px 8px;display:flex;gap:6px">
+                <button onclick="confirmLocRow(${i},'move')" style="background:var(--green);border:none;border-radius:5px;color:#fff;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--sans);font-weight:600">✓ Taşı</button>
+                <button onclick="confirmLocRow(${i},'remove')" style="background:var(--red);border:none;border-radius:5px;color:#fff;padding:5px 10px;cursor:pointer;font-size:11px;font-family:var(--sans);font-weight:600">🗑</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button onclick="confirmAllLocRows('move')" class="btn" style="background:var(--green);font-size:11px;padding:6px 14px">✓ Seçililerin Tümünü Taşı</button>
+        <button onclick="confirmAllLocRows('remove')" class="btn" style="background:var(--red);font-size:11px;padding:6px 14px">🗑 Seçililerin Tümünü Kaldır</button>
+      </div>`;
+  }
+
+  // Show result panel
+  document.getElementById('scan-result').classList.add('show');
+  setScanActive(`"${locs[0].metrix}" bulundu — ${staticLocs.length} statik location, ${totalQty} adet`);
+}
+
+function updateScanPreview() {
+  const loc = document.getElementById('sr-target-loc').value.trim();
+  const qty = document.getElementById('sr-move-qty').value;
+  document.getElementById('scan-loc-input').value = loc;
+  document.getElementById('scan-qty-input').value = qty;
+}
+
+function confirmScanMove() {
+  // Get values from either scanner bar or preview panel
+  const skuVal    = document.getElementById('scan-sku-input').value.trim() || (state.scanSKU && state.scanSKU.sku) || '';
+  const targetLoc = (document.getElementById('sr-target-loc').value || document.getElementById('scan-loc-input').value).trim();
+  const qtyInput  = document.getElementById('sr-move-qty').value || document.getElementById('scan-qty-input').value;
+
+  if (!skuVal) { setScanError('SKU boş — önce scan et'); return; }
+  if (!targetLoc) { setScanError('Hedef location girilmedi'); document.getElementById('sr-target-loc').focus(); return; }
+
+  if (!state.scanSKU || state.scanSKU.sku.toUpperCase() !== skuVal.toUpperCase()) {
+    lookupSKU(skuVal);
+    if (!state.scanSKU) return;
+  }
+
+  const { sku, staticLocs, totalQty } = state.scanSKU;
+  const moveQty = qtyInput ? parseInt(qtyInput) : totalQty;
+
+  if (moveQty <= 0 || isNaN(moveQty)) { setScanError('Geçersiz adet'); return; }
+
+  // Apply move: reduce from static locations, add/create target
+  let remaining = moveQty;
+  const fromLocs = [];
+  for (const loc of staticLocs) {
+    if (remaining <= 0) break;
+    const take = Math.min(loc.qty, remaining);
+    fromLocs.push(`${loc.location}(${take})`);
+    loc.qty -= take;
+    remaining -= take;
+    // Remove location if empty
+    if (loc.qty === 0) {
+      const idx = state.forkLoc.findIndex(l => l.metrix.toUpperCase() === sku.toUpperCase() && l.location === loc.location);
+      if (idx >= 0) state.forkLoc.splice(idx, 1);
+    }
+  }
+
+  // Add to target location or update existing
+  const targetType = locationType(targetLoc);
+  const existing = state.forkLoc.find(l => l.metrix.toUpperCase() === sku.toUpperCase() && l.location.toUpperCase() === targetLoc.toUpperCase());
+  if (existing) {
+    existing.qty += moveQty;
+  } else {
+    state.forkLoc.push({ metrix: sku, location: targetLoc, type: targetType, qty: moveQty });
+  }
+
+  // Log the move
+  state.moveLog.push({
+    sku, fromLoc: fromLocs.join(', '), toLoc: targetLoc,
+    qty: moveQty, action: '🔀 Taşındı',
+    time: new Date().toLocaleTimeString('tr-TR')
+  });
+
+  toast(`✓ ${sku} → ${targetLoc} (${moveQty} adet)`);
+  computeForkPriorities();
+  renderMoveLog();
+  clearScan();
+}
+
+function markAsRemoved() {
+  if (!state.scanSKU) { setScanError('Önce SKU scan et'); return; }
+  const { sku, staticLocs, totalQty } = state.scanSKU;
+  const qtyInput = document.getElementById('sr-move-qty').value;
+  const removeQty = qtyInput ? parseInt(qtyInput) : totalQty;
+  const fromLocs = [];
+
+  let remaining = removeQty;
+  for (const loc of staticLocs) {
+    if (remaining <= 0) break;
+    const take = Math.min(loc.qty, remaining);
+    fromLocs.push(`${loc.location}(${take})`);
+    loc.qty -= take;
+    remaining -= take;
+    if (loc.qty === 0) {
+      const idx = state.forkLoc.findIndex(l => l.metrix.toUpperCase() === sku.toUpperCase() && l.location === loc.location);
+      if (idx >= 0) state.forkLoc.splice(idx, 1);
+    }
+  }
+
+  state.moveLog.push({
+    sku, fromLoc: fromLocs.join(', '), toLoc: '—',
+    qty: removeQty, action: '🗑 Kaldırıldı',
+    time: new Date().toLocaleTimeString('tr-TR')
+  });
+
+  toast(`✓ ${sku} kaldırıldı (${removeQty} adet)`);
+  computeForkPriorities();
+  renderMoveLog();
+  clearScan();
+}
+
+function undoLastMove() {
+  if (!state.moveLog.length) { toast('Geri alınacak işlem yok'); return; }
+  // Re-process from scratch — reload original and replay all but last
+  state.moveLog.pop();
+  toast('Son işlem geri alındı — liste yeniden hesaplanıyor...');
+  // Re-process forkLoc from scratch is complex; simplest: notify user to re-upload
+  // Instead, just remove from log and recompute priorities with current forkLoc state
+  renderMoveLog();
+  computeForkPriorities();
+}
+
+function renderMoveLog() {
+  const log = state.moveLog;
+  const el = document.getElementById('move-log');
+  if (!log.length) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  document.getElementById('move-log-count').textContent = log.length;
+  document.getElementById('move-log-tbody').innerHTML = [...log].reverse().map(r => `<tr>
+    <td class="mono" style="font-weight:600">${r.sku}</td>
+    <td class="mono" style="font-size:11px;color:var(--text3)">${r.fromLoc}</td>
+    <td class="mono" style="color:var(--green)">${r.toLoc}</td>
+    <td class="mono">${r.qty}</td>
+    <td>${r.action}</td>
+    <td style="color:var(--text3);font-size:11px">${r.time}</td>
+  </tr>`).join('');
+}
+
+function setScanActive(msg) {
+  const bar = document.getElementById('scanner-bar');
+  bar.className = 'scanner-bar active';
+  document.getElementById('scan-info-text').textContent = msg;
+}
+
+function setScanError(msg) {
+  const bar = document.getElementById('scanner-bar');
+  bar.className = 'scanner-bar error';
+  document.getElementById('scan-info-text').textContent = '⚠ ' + msg;
+  document.getElementById('scan-result').classList.add('show');
+  toast('⚠ ' + msg);
+}
+
+function clearScan() {
+  state.scanSKU = null;
+  document.getElementById('scan-sku-input').value  = '';
+  document.getElementById('scan-loc-input').value  = '';
+  document.getElementById('scan-qty-input').value  = '';
+  document.getElementById('scan-result').classList.remove('show');
+  document.getElementById('scanner-bar').className = 'scanner-bar';
+  document.getElementById('scan-sku-input').focus();
+}
+
+// Auto-focus scanner input when forklift tab is opened
+// Patched into the original switchTab via tab click handler
+document.addEventListener('DOMContentLoaded', () => {
+  const forkTab = document.getElementById('tab-forklift');
+  if (forkTab) forkTab.addEventListener('click', () => {
+    setTimeout(() => {
+      const el = document.getElementById('scan-sku-input');
+      if (el) el.focus();
+    }, 120);
+  });
+});
+
+
+// ══════════════════════════════════════════════════
+//  CATEGORY FILTERS FOR PRIORITY PANELS
+// ══════════════════════════════════════════════════
+state.catFilter = { p1: '', p2: '', p3: '' };
+
+function setCatFilter(panel, cat) {
+  state.catFilter[panel] = cat;
+  // Update active button
+  document.querySelectorAll(`#cf-${panel} .cat-btn`).forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick').includes(`'${cat}'`));
+  });
+  if (panel === 'p1') renderForkP1();
+  if (panel === 'p2') renderForkP2();
+  if (panel === 'p3') renderForkP3();
+}
+
+function applyFilter(data, panel) {
+  const cat = state.catFilter[panel] || '';
+  const filtered = cat ? data.filter(r => productCategory(r.metrix) === cat) : data;
+  const countEl = document.getElementById(`cf-${panel}-count`);
+  if (countEl) countEl.textContent = `${filtered.length} / ${data.length} SKU`;
+  return filtered;
+}
+
+
+// ══════════════════════════════════════════════════
+//  UNIFIED TABLE
+// ══════════════════════════════════════════════════
+state.unifiedFilter = { cat: '', actions: new Set(), loc: '' };
+let forkCurrentPage = 1;
+const FORK_PAGE = 100;
+
+function toggleActionFilter(val) {
+  const s = state.unifiedFilter.actions;
+  if (val === 'all') {
+    s.clear();
+  } else {
+    if (s.has(val)) s.delete(val);
+    else s.add(val);
+  }
+  // Update button states
+  const allActive = s.size === 0;
+  document.getElementById('ab-all').classList.toggle('active', allActive);
+  ['remove','move','merge'].forEach(v => {
+    document.getElementById('ab-' + v).classList.toggle('active', s.has(v));
+  });
+  forkCurrentPage = 1;
+  renderUnifiedTable();
+}
+
+function setUnifiedFilter(type, val) {
+  if (type === 'action') { toggleActionFilter(val); return; }
+  state.unifiedFilter[type] = val;
+  const barId = type === 'cat' ? 'cf-unified-cat' : 'cf-unified-loc';
+  document.querySelectorAll(`#${barId} .cat-btn`).forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick').includes(`'${val}'`));
+  });
+  forkCurrentPage = 1;
+  renderUnifiedTable();
+}
+
+function getUnifiedData() {
+  const allSKUs = [
+    ...(state.forkP1||[]).map(r => ({ ...r, actionType: 'remove' })),
+    ...(state.forkP2||[]).map(r => ({ ...r, actionType: 'move'   })),
+    ...(state.forkP3||[]).map(r => ({ ...r, actionType: 'merge'  })),
+  ];
+  const { cat, actions, loc } = state.unifiedFilter;
+  const q = (document.getElementById('fork-search')||{value:''}).value.toUpperCase();
+
+  // Build location → SKU count map (how many SKUs share each static location)
+  const locSkuCount = {};
+  state.forkLoc.forEach(r => {
+    if (r.type === 'statik' || r.type === 'zasket') {
+      const k = r.location.toUpperCase();
+      locSkuCount[k] = (locSkuCount[k] || 0) + 1;
+    }
+  });
+
+  return allSKUs.filter(r => {
+    if (cat    && productCategory(r.metrix) !== cat) return false;
+    if (actions.size > 0 && !actions.has(r.actionType)) return false;
+    if (loc) {
+      // Check if ALL of this SKU's static locations are exclusive (only 1 SKU in that location)
+      const allExclusive = r.staticLocs.every(l => (locSkuCount[l.location.toUpperCase()]||0) <= 1);
+      const anyShared    = r.staticLocs.some(l  => (locSkuCount[l.location.toUpperCase()]||0) > 1);
+      if (loc === 'single' && !allExclusive) return false; // location has only this SKU
+      if (loc === 'multi'  && !anyShared)    return false; // location shared with other SKUs
+    }
+    if (q && !r.metrix.toUpperCase().includes(q) &&
+        !r.staticLocs.some(l => l.location.toUpperCase().includes(q))) return false;
+    return true;
+  });
+}
+
+function renderUnifiedTable() {
+  const data  = getUnifiedData();
+  const start = (forkCurrentPage - 1) * FORK_PAGE;
+  const page  = data.slice(start, start + FORK_PAGE);
+  const tbody = document.getElementById('fork-unified-tbody');
+
+  document.getElementById('unified-count').textContent = `${data.length} SKU`;
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="es-icon">🔍</div><p>Filtre sonucu bulunamadı</p></div></td></tr>`;
+    document.getElementById('fork-page-info').textContent = '';
+    return;
+  }
+
+  const actionMap = {
+    remove: '<span class="badge danger">🔴 Kaldır</span>',
+    move:   '<span class="badge warn">🟡 Dinamiğe Taşı</span>',
+    merge:  '<span class="badge dinamik">🔵 Dinamikte Var → Birleştir</span>',
+  };
+
+  tbody.innerHTML = page.map(r => `<tr>
+    <td class="mono" style="font-weight:700">${r.metrix}</td>
+    <td>${categoryBadge(r.metrix)}</td>
+    <td class="mono" style="font-size:11px">${r.staticLocs.map(l=>l.location).join(', ')}</td>
+    <td class="mono">${r.staticQty.toLocaleString()}</td>
+    <td class="mono" style="font-size:11px;color:var(--green)">${r.dynLocs && r.dynLocs.length ? r.dynLocs.map(l=>l.location).join(', ') : '<span style="color:var(--text3)">—</span>'}</td>
+    <td class="mono">${r.dynQty > 0 ? r.dynQty.toLocaleString() : '<span style="color:var(--text3)">—</span>'}</td>
+    <td>${salesCell(r.sales)}</td>
+    <td>${actionMap[r.actionType]}</td>
+  </tr>`).join('');
+
+  const total = data.length;
+  const pages = Math.ceil(total / FORK_PAGE);
+  document.getElementById('fork-page-info').textContent = `${start+1}–${Math.min(start+FORK_PAGE,total)} / ${total}`;
+  document.getElementById('fork-prev').disabled = forkCurrentPage <= 1;
+  document.getElementById('fork-next').disabled = forkCurrentPage >= pages;
+}
+
+function forkPage(d) { forkCurrentPage += d; renderUnifiedTable(); }
+
+
+// ══════════════════════════════════════════════════
+//  PER-LOCATION ROW ACTIONS
+// ══════════════════════════════════════════════════
+function confirmLocRow(idx, actionType) {
+  if (!state.scanSKU) return;
+  const { sku, scanSKU } = state;
+  const locRows = state.scanSKU.staticLocs.length ? state.scanSKU.staticLocs : state.scanSKU.locs;
+  const loc     = locRows[idx];
+  if (!loc) return;
+
+  const targetEl = document.getElementById(`loc-target-${idx}`);
+  const qtyEl    = document.getElementById(`loc-qty-${idx}`);
+  const targetLoc = targetEl ? targetEl.value.trim() : '';
+  const moveQty   = qtyEl && qtyEl.value ? parseInt(qtyEl.value) : loc.qty;
+
+  if (actionType === 'move' && !targetLoc) {
+    targetEl && (targetEl.style.borderColor = 'var(--red)');
+    toast('⚠ Hedef location boş!');
+    return;
+  }
+
+  // Apply to forkLoc
+  const forkIdx = state.forkLoc.findIndex(l =>
+    l.metrix.toUpperCase() === loc.metrix.toUpperCase() && l.location === loc.location
+  );
+  if (forkIdx >= 0) {
+    state.forkLoc[forkIdx].qty -= moveQty;
+    if (state.forkLoc[forkIdx].qty <= 0) state.forkLoc.splice(forkIdx, 1);
+  }
+
+  if (actionType === 'move') {
+    const existing = state.forkLoc.find(l =>
+      l.metrix.toUpperCase() === loc.metrix.toUpperCase() &&
+      l.location.toUpperCase() === targetLoc.toUpperCase()
+    );
+    if (existing) existing.qty += moveQty;
+    else state.forkLoc.push({ metrix: loc.metrix, location: targetLoc, type: locationType(targetLoc), qty: moveQty });
+  }
+
+  state.moveLog.push({
+    sku: loc.metrix, fromLoc: loc.location,
+    toLoc: actionType === 'move' ? targetLoc : '—',
+    qty: moveQty,
+    action: actionType === 'move' ? '🔀 Taşındı' : '🗑 Kaldırıldı',
+    time: new Date().toLocaleTimeString('tr-TR')
+  });
+
+  toast(`✓ ${loc.metrix} ${loc.location} → ${actionType === 'move' ? targetLoc : 'Kaldırıldı'} (${moveQty})`);
+
+  // Remove this row visually
+  const row = document.getElementById(`loc-chk-${idx}`)?.closest('tr');
+  if (row) { row.style.opacity = '.3'; row.style.pointerEvents = 'none'; }
+
+  computeForkPriorities();
+  renderMoveLog();
+}
+
+function confirmAllLocRows(actionType) {
+  if (!state.scanSKU) return;
+  const locRows = state.scanSKU.staticLocs.length ? state.scanSKU.staticLocs : state.scanSKU.locs;
+  locRows.forEach((_, i) => {
+    const chk = document.getElementById(`loc-chk-${i}`);
+    if (chk && chk.checked) confirmLocRow(i, actionType);
+  });
+  setTimeout(clearScan, 300);
+}
+
+
+// ── LOGIN ──
+const USERS = { 'wimas': 'fahri' };
+
+function doLogin() {
+  const user = document.getElementById('login-user').value.trim().toLowerCase();
+  const pass = document.getElementById('login-pass').value;
+  if (USERS[user] && USERS[user] === pass) {
+    document.getElementById('login-overlay').style.display = 'none';
+    sessionStorage.setItem('wimas_auth', '1');
+  } else {
+    document.getElementById('login-error').textContent = 'Kullanıcı adı veya şifre hatalı';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+  }
+}
+
+// Auto-hide if already authenticated in this session
+if (sessionStorage.getItem('wimas_auth') === '1') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('login-overlay');
+    if (el) el.style.display = 'none';
+  });
+}
+
+</script>
+</body>
+</html>
